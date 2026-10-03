@@ -1,0 +1,98 @@
+# JarvisTEC
+
+Asistente personal de escritorio estilo "Jarvis" que reconoce la emoción del usuario por cámara, recibe
+comandos por voz y responde consultando 10 modelos de aprendizaje automático expuestos por un API REST.
+
+Proyecto del curso **Inteligencia Artificial** — I Semestre 2026, Ingeniería en Computación,
+Instituto Tecnológico de Costa Rica, Campus Tecnológico Local San Carlos.
+
+## Arquitectura
+
+```
+┌──────────────────────────── App de escritorio (PyWebView) ────────────────────────────┐
+│  Interfaz web (React)  ──fetch /api/*──►  FastAPI (hilo en segundo plano, :8000)       │
+│                                            ├─ features/asistente_voz  → Google Speech  │
+│                                            ├─ features/vision_facial  → Azure Face     │
+│                                            └─ features/modelo_01 … modelo_10 (sklearn) │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+| Capa              | Tecnología                                                   |
+|-------------------|--------------------------------------------------------------|
+| Escritorio        | PyWebView                                                    |
+| API REST          | FastAPI + Uvicorn                                            |
+| Machine Learning  | scikit-learn, pandas, NumPy                                  |
+| Voz a texto       | Google Cloud Speech-to-Text                                  |
+| Emociones         | Azure Face API                                               |
+| Interfaz          | React (Vite)                                                 |
+| Documentación     | LaTeX (Overleaf)                                             |
+
+El desarrollo sigue tres metodologías:
+
+- **SDD (Spec-Driven):** [`specs/api_rest_spec.md`](specs/api_rest_spec.md) es el contrato único entre backend y frontend.
+- **FDD (Feature-Driven):** cada modelo o servicio es una carpeta aislada en `backend/features/` que se
+  registra sola en la API, sin editar `main.py`.
+- **ADD (Agent-Driven):** [`CLAUDE.md`](CLAUDE.md) guarda reglas, comandos y estado del proyecto para los agentes de IA.
+
+## Estructura
+
+```
+├── specs/              Contrato de la API y lista de los 10 modelos
+├── backend/
+│   ├── main.py         FastAPI + ventana PyWebView
+│   ├── core/           Código compartido (errores, registro y carga de modelos, métricas)
+│   ├── features/       Una carpeta por modelo o servicio (dataset, train.py, router.py, analisis.md)
+│   ├── ui_prueba/      Página temporal mientras no existe el build de React
+│   └── tests/          Pruebas del contrato (pytest)
+├── frontend/           Interfaz React (cliente del API + mocks del contrato)
+├── data/               Datos crudos grandes o compartidos
+└── docs_latex/         Documento para Overleaf
+```
+
+## Instalación
+
+Requisitos: Python 3.10+ y Node.js 20.19+.
+
+```bash
+# Backend
+python -m venv venv                      # Linux: agregar --system-site-packages (GTK/WebKit2 para PyWebView)
+source venv/bin/activate                 # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp backend/.env.example backend/.env     # completar credenciales de Azure y Google Cloud
+
+# Frontend
+cd frontend && npm install
+```
+
+## Uso
+
+| Acción                     | Comando                                                       |
+|----------------------------|---------------------------------------------------------------|
+| Abrir la app de escritorio | `python backend/main.py`                                      |
+| Solo la API (desarrollo)   | `cd backend && uvicorn main:app --reload` → http://localhost:8000/docs |
+| Frontend en desarrollo     | `cd frontend && npm run dev`                                  |
+| Frontend sin backend       | `cd frontend && VITE_USAR_MOCKS=true npm run dev`             |
+| Build para escritorio      | `cd frontend && npm run build`                                |
+| Entrenar un modelo         | `cd backend && python -m features.modelo_02_autos.train`      |
+| Pruebas                    | `cd backend && pytest`                                        |
+
+## Modelos de Machine Learning
+
+| #  | Modelo                                   | Tipo           | Estado        |
+|----|------------------------------------------|----------------|---------------|
+| 01 | Precio del Bitcoin                       | Regresión      | Pendiente     |
+| 02 | Precio de un automóvil                   | Regresión      | ✅ R² = 0.962 |
+| 03 | Calidad del vino                         | Clasificación  | Pendiente     |
+| 04 | Abandono de clientes de telefonía        | Clasificación  | Pendiente     |
+| 05 | Riesgo de accidente cerebrovascular      | Clasificación  | Pendiente     |
+| 06 | Tipo de hepatitis C                      | Clasificación  | Pendiente     |
+| 07 | Etapa de cirrosis                        | Clasificación  | Pendiente     |
+| 08 | Porcentaje de grasa corporal             | Regresión      | Pendiente     |
+| 09 | Precio del aguacate                      | Regresión      | Pendiente     |
+| 10 | Precio de acciones del S&P 500           | Regresión      | Pendiente     |
+
+Fuentes de datos, variables objetivo y comandos de voz de cada modelo: [`specs/modelos_spec.md`](specs/modelos_spec.md).
+
+## Contribuir
+
+Ver [`CONTRIBUTING.md`](CONTRIBUTING.md): flujo spec → feature, ramas, Conventional Commits y pull requests.

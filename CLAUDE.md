@@ -1,0 +1,87 @@
+# JarvisTEC-Core — Memoria del proyecto (ADD)
+
+Asistente personal de escritorio estilo "Jarvis" (Proyecto IA, I Semestre 2026, TEC San Carlos).
+Este archivo es la memoria persistente de los agentes: si cambias una convención, comando o el estado
+del proyecto, actualízalo aquí en el mismo commit.
+
+## Arquitectura
+
+```
+PyWebView (ventana nativa)  ──►  http://127.0.0.1:8000/       interfaz web (frontend/dist o backend/ui_prueba)
+                                 http://127.0.0.1:8000/api/*  FastAPI (hilo en segundo plano)
+                                        └─ backend/features/<feature>/router.py  (registro automático)
+```
+
+- **SDD — contrato primero.** `specs/api_rest_spec.md` es la única fuente de verdad. Antes de codificar o
+  cambiar un endpoint, se actualiza la spec (y su historial). El backend la implementa; el frontend la
+  consume y la mockea en `frontend/src/api/mocks.js`.
+- **FDD — rebanadas verticales.** Cada modelo de ML o servicio cognitivo es una carpeta aislada en
+  `backend/features/` con sus datos, entrenamiento y `router.py`. `specs/modelos_spec.md` lista los 10 modelos.
+- **ADD — agentes.** El agente escribe código funcional con pruebas, abstrae lo repetitivo en `backend/core/`
+  y mantiene este archivo al día.
+
+## Reglas estrictas
+
+1. **No modificar `backend/main.py` para agregar rutas.** Toda feature expone `router` (un `APIRouter`) en
+   `backend/features/<feature>/router.py`; `main.py` lo descubre e incluye solo. Si además exporta
+   `MODELO_INFO`, queda registrada como modelo de ML (`GET /api/modelos`).
+2. **Escritorio = PyWebView.** No usar Electron, Tauri, Flet, Eel ni similares. La ventana carga la UI
+   desde el mismo servidor FastAPI (mismo origen, sin CORS). El frontend usa rutas relativas `/api/...`.
+3. **API = FastAPI.** Respuestas JSON limpias. Los errores se lanzan con `core.errores.ApiError(status, codigo, mensaje)`
+   y siempre salen con el formato `{"error": {"codigo", "mensaje", "detalle"}}` de la spec (§1.1).
+4. **Servicios cloud obligatorios.** Rostros/emociones: Azure Face (no inventar modelos locales).
+   Voz a texto: Google Cloud Speech-to-Text. Credenciales solo en `backend/.env` (ver `backend/.env.example`).
+5. **Paralelismo (2 devs).** No tocar archivos fuera de la feature asignada.
+   - Dev A: `backend/features/modelo_XX_*`.
+   - Dev B: `frontend/`, `backend/features/asistente_voz`, `backend/features/vision_facial`.
+   - Cambios a `specs/`, `backend/core/` o `main.py` se acuerdan entre ambos.
+
+## Convenciones de código
+
+- Idioma: español para nombres, campos JSON y mensajes; `snake_case` en Python y JSON.
+- Carpeta de modelo: `modelo_XX_<slug>/` con `dataset.csv`, `train.py`, `router.py`, `analisis.md`.
+  El entrenamiento genera `modelo.joblib`, `metricas.json` y `figuras/`.
+- `train.py` sigue las 6 etapas de la rúbrica: Análisis, Entendimiento, Exploración, Modelo, Evaluación,
+  Conclusión. Usa los helpers de `core/entrenamiento.py`. Referencia completa: `modelo_02_autos`.
+- `router.py` de modelo: `MODELO_INFO`, esquema `Entrada` (pydantic) y `POST /predecir` usando
+  `core.modelos.predecir_con_pipeline`.
+- Datos crudos grandes o compartidos en `data/`; cada feature guarda su `dataset.csv`.
+- Pruebas en `backend/tests/` con `TestClient`; todo endpoint nuevo lleva su prueba.
+
+## Comandos
+
+| Acción                     | Comando                                                           |
+|----------------------------|-------------------------------------------------------------------|
+| Instalar dependencias      | `pip install -r requirements.txt`                                 |
+| App de escritorio          | `python backend/main.py`                                          |
+| Solo API (desarrollo)      | `cd backend && uvicorn main:app --reload` → `/docs`               |
+| Pruebas                    | `cd backend && pytest`                                            |
+| Entrenar un modelo         | `cd backend && python -m features.modelo_XX_<slug>.train`         |
+| Frontend (desarrollo)      | `cd frontend && npm run dev` (proxy `/api` → `:8000`)             |
+| Frontend con mocks         | `cd frontend && VITE_USAR_MOCKS=true npm run dev`                 |
+| Frontend para escritorio   | `cd frontend && npm run build` (PyWebView sirve `frontend/dist`)  |
+
+**Linux:** PyWebView usa GTK/WebKit2 del sistema (`python3-gi`, `gir1.2-webkit2-4.1`); crear el venv con
+`python3 -m venv --system-site-packages venv`. **Windows:** usa Edge WebView2, no requiere nada extra.
+
+## Estado del proyecto
+
+_Actualizar al cerrar cada tarea._
+
+| Componente                   | Estado                                                                 |
+|------------------------------|------------------------------------------------------------------------|
+| Contrato API                 | v0.1 (`specs/api_rest_spec.md`)                                        |
+| Ventana PyWebView + FastAPI  | ✅ `backend/main.py` (UI de prueba en `backend/ui_prueba/`)            |
+| Registro automático features | ✅                                                                     |
+| Modelo 02 autos              | ✅ entrenado (R² 0.962)                                                |
+| Modelos 01, 03–10            | ⏳ plantillas con TODO; faltan datasets de Kaggle                      |
+| Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
+| Emociones (Azure Face)       | ⏳ responde 501. Azure retiró el atributo `emotion`: validar con el profesor |
+| Comandos de voz → modelo     | ✅ por frases en `MODELO_INFO["comandos"]`                             |
+| Interfaz Jarvis (React)      | ⏳ scaffold de Vite + cliente API + mocks                              |
+| Documento LaTeX              | ⏳ esqueleto en `docs_latex/main.tex`                                  |
+
+## Documentación científica
+
+Al redactar resultados de modelos: tono académico (tercera persona, justificación formal con referencias),
+en Markdown fácil de pasar a LaTeX/Overleaf, dentro del `analisis.md` de cada modelo.

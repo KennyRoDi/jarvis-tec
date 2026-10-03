@@ -1,0 +1,60 @@
+% Documento principal para Overleaf. Estructura según el enunciado (sección "Documentación").
+\documentclass[12pt,a4paper]{article}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[margin=2.5cm]{geometry}
+
+\graphicspath{{figuras/}}
+
+\begin{document}
+
+% 1. Portada
+\begin{titlepage}
+  \centering
+  {\Large Instituto Tecnológico de Costa Rica\par}
+  {\large Ingeniería en Computación — Campus Tecnológico Local San Carlos\par}
+  \vspace{2cm}
+  {\Huge\bfseries JarvisTEC\par}
+  {\Large Asistente personal con reconocimiento de voz, emociones y aprendizaje automático\par}
+  \vspace{2cm}
+  {\large Inteligencia Artificial — I Semestre 2026\par}
+  {\large Profesor: Ing. Efrén Jiménez Delgado\par}
+  \vspace{1cm}
+  {\large Integrantes:\par}
+  % TODO: nombres y carnés
+  \vfill
+  {\large \today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% 2. Solución planteada
+\section{Solución planteada}
+% TODO: arquitectura general (frontend, API REST, servicios de Azure/Google, modelos)
+
+% 3. Arquitecturas de ML
+\section{Arquitecturas de aprendizaje automático}
+% TODO
+
+% 4. Justificación y explicación de los modelos (uno por modelo, desde cada analisis.md)
+\section{Justificación y explicación de los modelos}
+% \input{modelos/modelo_02_autos}
+
+% 5. Análisis de resultados
+\section{Análisis de resultados obtenidos}
+% TODO
+
+% 6. Bibliografía
+\bibliographystyle{ieeetr}
+\bibliography{referencias}
+
+% 7. Anexos
+\appendix
+\section{Anexos}
+% TODO: especificación de la API, comandos de voz soportados
+
+\end{document}

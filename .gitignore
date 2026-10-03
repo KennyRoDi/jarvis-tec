@@ -1,0 +1,19 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Secretos
+.env
+*.credentials.json
+
+# Frontend
+node_modules/
+frontend/dist/
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store

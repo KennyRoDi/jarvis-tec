@@ -1,0 +1,25 @@
+# JarvisTEC-Core — instalar con: pip install -r requirements.txt
+# Linux: crear el venv con --system-site-packages para que PyWebView use GTK/WebKit2 del sistema (ver CLAUDE.md).
+
+# Escritorio y API
+pywebview==6.2.1
+fastapi==0.142.2
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
+python-dotenv==1.2.4
+
+# Machine Learning
+scikit-learn==1.9.1
+pandas==3.0.6
+numpy==2.5.3
+joblib==1.6.0
+matplotlib==3.11.2
+seaborn==0.13.2
+
+# Servicios cloud
+azure-cognitiveservices-vision-face==0.6.1
+google-cloud-speech==2.41.0
+
+# Pruebas
+pytest==9.1.1
+httpx==0.28.1

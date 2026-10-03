@@ -1,0 +1,22 @@
+{
+  "metricas": {
+    "r2": 0.962,
+    "mae": 0.6121,
+    "rmse": 0.9352,
+    "cv_r2_media": 0.8846,
+    "baseline_regresion_lineal": {
+      "r2": 0.849,
+      "mae": 1.2162,
+      "rmse": 1.8652
+    }
+  },
+  "entrada_ejemplo": {
+    "year": 2016,
+    "present_price": 0.57,
+    "kms_driven": 24000,
+    "owner": 0,
+    "fuel_type": "Petrol",
+    "seller_type": "Individual",
+    "transmission": "Automatic"
+  }
+}
