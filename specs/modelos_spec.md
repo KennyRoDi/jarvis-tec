@@ -1,7 +1,8 @@
 # Especificación de modelos de ML — JarvisTEC
 
-> **Estado:** propuesta inicial, pendiente de confirmación del equipo y del profesor.
-> Selección balanceada: 5 de regresión y 5 de clasificación, todos tomados de la lista del enunciado.
+> Selección balanceada: 5 de regresión y 5 de clasificación, **todos de la lista del enunciado**, por lo
+> que no requieren validación de dataset por parte del profesor (requerimiento 3).
+> El detalle de cada modelo (datos, enfoque, entrada, criterios de aceptación) está en su `SPEC.md`.
 
 ## Convenciones (aplican a los 10 modelos)
 
@@ -13,6 +14,8 @@ Cada modelo vive en `backend/features/modelo_XX_<slug>/` con estos archivos:
 | `train.py`       | Dev A       | Entrenamiento estructurado en las 6 etapas de evaluación                    |
 | `router.py`      | Dev A       | `router` de FastAPI + `MODELO_INFO` + esquema `Entrada`                     |
 | `analisis.md`    | Dev A       | Resumen académico de las 6 etapas, listo para pasar a LaTeX                 |
+| `SPEC.md`        | Dev A       | Especificación y criterios de aceptación del modelo                         |
+| `test_modelo.py` | Dev A       | Pruebas del endpoint con el modelo real                                     |
 | `modelo.joblib`  | generado    | Artefacto: `{"pipeline": Pipeline de sklearn, "metricas": {...}, ...}`      |
 | `metricas.json`  | generado    | Métricas de evaluación (las lee `GET /api/modelos/{slug}/info`)             |
 | `figuras/`       | generado    | Gráficos de exploración y evaluación (PNG, para Overleaf)                   |
@@ -44,69 +47,17 @@ Los datasets de Kaggle requieren iniciar sesión. Descarga manual o con la CLI:
 `kaggle datasets download -d <usuario>/<dataset> --unzip -p backend/features/modelo_XX_<slug>/`
 y renombrar el CSV principal a `dataset.csv`.
 
-## Detalle por modelo
+## Especificación por modelo
 
-Cada modelo debe completar aquí su **esquema de entrada** (lo que recibe `POST /api/modelos/{slug}/predecir`)
-antes de implementar el `router.py`. Los nombres van en `snake_case`.
-
-### 01 · bitcoin
-- **Pregunta:** ¿cuál será el precio de cierre del Bitcoin mañana?
-- **Algoritmos candidatos:** Regresión lineal con rezagos (lags), Random Forest Regressor, Gradient Boosting.
-- **Entrada:** _por definir_ (p. ej. `dias_adelante: int`, usando los últimos precios del dataset).
-- **Comandos:** "precio del bitcoin", "bitcoin mañana", "tipo de cambio del bitcoin".
-
-### 02 · autos — ✅ modelo de referencia implementado
-- **Pregunta:** ¿cuál es el precio de reventa de un automóvil usado?
-- **Algoritmos:** Random Forest Regressor (implementado); comparar con Regresión lineal.
-- **Entrada:** `year: int`, `present_price: float`, `kms_driven: int`, `fuel_type: "Petrol"|"Diesel"|"CNG"`,
-  `seller_type: "Dealer"|"Individual"`, `transmission: "Manual"|"Automatic"`, `owner: int`.
-- **Unidad:** lakhs INR (1 lakh = 100 000 rupias).
-- **Comandos:** "precio de un auto", "precio de un carro", "cuánto vale mi carro".
-
-### 03 · vino
-- **Pregunta:** ¿el vino es de calidad baja, media o alta?
-- **Algoritmos candidatos:** Random Forest Classifier, SVM, Regresión logística.
-- **Entrada:** _por definir_ (11 variables fisicoquímicas + `type`).
-- **Comandos:** "calidad del vino", "clasificar vino".
-
-### 04 · churn
-- **Pregunta:** ¿el cliente abandonará la compañía telefónica?
-- **Algoritmos candidatos:** Regresión logística, Random Forest, Gradient Boosting.
-- **Entrada:** _por definir_ (subconjunto de columnas de `dataset.csv`; `TotalCharges` viene como texto con vacíos).
-- **Comandos:** "cliente se va", "abandono de cliente", "churn".
-
-### 05 · acv
-- **Pregunta:** ¿el paciente tiene riesgo de sufrir un accidente cerebrovascular?
-- **Algoritmos candidatos:** Regresión logística con `class_weight="balanced"`, Random Forest; considerar SMOTE.
-- **Entrada:** _por definir_.
-- **Comandos:** "riesgo de derrame", "accidente cerebrovascular".
-
-### 06 · hepatitis
-- **Pregunta:** ¿qué categoría de hepatitis C presenta el paciente (donante, hepatitis, fibrosis, cirrosis)?
-- **Algoritmos candidatos:** KNN, Random Forest, SVM.
-- **Entrada:** _por definir_.
-- **Comandos:** "tipo de hepatitis", "diagnóstico de hepatitis".
-
-### 07 · cirrosis
-- **Pregunta:** ¿en qué etapa histológica de cirrosis está el paciente?
-- **Algoritmos candidatos:** Random Forest, Gradient Boosting, Regresión logística multinomial.
-- **Entrada:** _por definir_.
-- **Comandos:** "etapa de cirrosis", "tipo de cirrosis".
-
-### 08 · grasa_corporal
-- **Pregunta:** ¿qué porcentaje de grasa corporal tiene el paciente según sus medidas?
-- **Algoritmos candidatos:** Regresión lineal, Ridge/Lasso, Random Forest Regressor.
-- **Entrada:** _por definir_.
-- **Comandos:** "grasa corporal", "masa corporal".
-
-### 09 · aguacate
-- **Pregunta:** ¿cuál será el precio promedio del aguacate en una región y fecha?
-- **Algoritmos candidatos:** Random Forest Regressor, Gradient Boosting.
-- **Entrada:** _por definir_.
-- **Comandos:** "precio del aguacate".
-
-### 10 · sp500
-- **Pregunta:** ¿cuál será el precio de cierre de una acción del S&P 500 mañana?
-- **Algoritmos candidatos:** Regresión lineal con rezagos, Random Forest Regressor.
-- **Entrada:** _por definir_ (p. ej. `simbolo: str`).
-- **Comandos:** "precio de la acción", "bolsa", "sp500".
+| #  | SPEC                                                                            | ¿Se ejecuta solo con la voz? | Estado |
+|----|---------------------------------------------------------------------------------|------------------------------|--------|
+| 01 | [bitcoin](../backend/features/modelo_01_bitcoin/SPEC.md)                        | Sí                           | ⏳ |
+| 02 | [autos](../backend/features/modelo_02_autos/SPEC.md)                            | No (formulario)              | ✅ entrenado (falta interfaz y referencias) |
+| 03 | [vino](../backend/features/modelo_03_vino/SPEC.md)                              | No                           | ⏳ |
+| 04 | [churn](../backend/features/modelo_04_churn/SPEC.md)                            | No                           | ⏳ |
+| 05 | [acv](../backend/features/modelo_05_acv/SPEC.md)                                | No                           | ⏳ |
+| 06 | [hepatitis](../backend/features/modelo_06_hepatitis/SPEC.md)                    | No                           | ⏳ |
+| 07 | [cirrosis](../backend/features/modelo_07_cirrosis/SPEC.md)                      | No                           | ⏳ |
+| 08 | [grasa_corporal](../backend/features/modelo_08_grasa_corporal/SPEC.md)          | No                           | ⏳ |
+| 09 | [aguacate](../backend/features/modelo_09_aguacate/SPEC.md)                      | Sí (valores por defecto)     | ⏳ |
+| 10 | [sp500](../backend/features/modelo_10_sp500/SPEC.md)                            | Sí                           | ⏳ |

@@ -23,6 +23,7 @@ class ModeloRegistrado:
     id: str
     carpeta: Path
     info: dict
+    entrada: type[BaseModel] | None = None  # esquema `Entrada` del router.py
 
     @property
     def entrenado(self) -> bool:
@@ -36,8 +37,8 @@ class ModeloRegistrado:
 REGISTRO: dict[str, ModeloRegistrado] = {}  # slug -> modelo
 
 
-def registrar(id_feature: str, carpeta: Path, info: dict) -> None:
-    REGISTRO[info["slug"]] = ModeloRegistrado(id=id_feature, carpeta=carpeta, info=info)
+def registrar(id_feature: str, carpeta: Path, info: dict, entrada: type[BaseModel] | None = None) -> None:
+    REGISTRO[info["slug"]] = ModeloRegistrado(id=id_feature, carpeta=carpeta, info=info, entrada=entrada)
 
 
 class RespuestaPrediccion(BaseModel):
@@ -101,4 +102,6 @@ def info_modelo(slug: str):
         **modelo.resumen(),
         "metricas": (metricas or {}).get("metricas") if modelo.entrenado else None,
         "entrada_ejemplo": (metricas or {}).get("entrada_ejemplo"),
+        # JSON Schema de la entrada: el frontend genera el formulario de cada modelo a partir de aquí.
+        "esquema_entrada": modelo.entrada.model_json_schema() if modelo.entrada else None,
     }

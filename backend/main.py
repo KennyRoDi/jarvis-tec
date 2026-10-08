@@ -20,6 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from core import modelos
 from core.config import CORS_ORIGENES, FEATURES_DIR, HOST, PUERTO, UI_PRUEBA_DIR, UI_REACT_DIR, VERSION
 from core.errores import registrar_manejadores
+from core.escritorio import permitir_camara_y_microfono
 
 logger = logging.getLogger("jarvis")
 
@@ -42,7 +43,7 @@ def cargar_features() -> None:
             logger.exception("No se pudo cargar la feature '%s'", carpeta.name)
             continue
         if hasattr(modulo, "MODELO_INFO"):
-            modelos.registrar(carpeta.name, carpeta, modulo.MODELO_INFO)
+            modelos.registrar(carpeta.name, carpeta, modulo.MODELO_INFO, getattr(modulo, "Entrada", None))
         app.include_router(modulo.router)
 
 
@@ -72,8 +73,10 @@ def main() -> None:
     import webview  # solo la app de escritorio lo necesita; uvicorn y las pruebas no
 
     servidor = iniciar_servidor()
-    webview.create_window("JarvisTEC", f"http://{HOST}:{PUERTO}/", width=1280, height=800, min_size=(960, 600))
-    webview.start()
+    ventana = webview.create_window(
+        "JarvisTEC", f"http://{HOST}:{PUERTO}/", width=1280, height=800, min_size=(960, 600)
+    )
+    webview.start(permitir_camara_y_microfono, ventana)
     servidor.should_exit = True
 
 

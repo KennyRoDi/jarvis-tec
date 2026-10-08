@@ -21,7 +21,16 @@ export const mocks = {
 
   infoModelo: async (slug) => ({
     id: `modelo_xx_${slug}`, slug, nombre: `Modelo ${slug}`, tipo: 'regresion', comandos: [],
-    entrenado: true, metricas: { r2: 0.95, mae: 0.61, rmse: 0.98 }, entrada_ejemplo: {},
+    entrenado: true, metricas: { r2: 0.95, mae: 0.61, rmse: 0.98 },
+    entrada_ejemplo: { year: 2014, fuel_type: 'Petrol' },
+    esquema_entrada: {
+      type: 'object',
+      required: ['year', 'fuel_type'],
+      properties: {
+        year: { type: 'integer', minimum: 1990, maximum: 2030 },
+        fuel_type: { type: 'string', enum: ['Petrol', 'Diesel', 'CNG'] },
+      },
+    },
   }),
 
   predecir: async (slug) => {
@@ -37,8 +46,8 @@ export const mocks = {
     return { texto: 'jarvis precio del bitcoin para mañana', confianza: 0.93, idioma: 'es-CR' }
   },
 
-  interpretarComando: async () => ({
-    reconocido: true, modelo: 'bitcoin', parametros: {},
+  interpretarComando: async (texto, emocion = null) => ({
+    reconocido: true, modelo: 'bitcoin', parametros: { dias_adelante: 1 }, emocion,
     respuesta_texto: 'Consultando el modelo de predicción del precio del Bitcoin.',
   }),
 

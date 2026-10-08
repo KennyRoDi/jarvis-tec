@@ -37,7 +37,7 @@ El desarrollo sigue tres metodologías:
 ## Estructura
 
 ```
-├── specs/              Contrato de la API y lista de los 10 modelos
+├── specs/              Contrato de la API, lista de modelos y trazabilidad del enunciado
 ├── backend/
 │   ├── main.py         FastAPI + ventana PyWebView
 │   ├── core/           Código compartido (errores, registro y carga de modelos, métricas)
@@ -94,5 +94,8 @@ cd frontend && npm install
 Fuentes de datos, variables objetivo y comandos de voz de cada modelo: [`specs/modelos_spec.md`](specs/modelos_spec.md).
 
 ## Contribuir
+
+Cada carpeta de trabajo tiene un `SPEC.md` con su objetivo, tareas y criterios de aceptación;
+[`specs/alcance_spec.md`](specs/alcance_spec.md) relaciona cada requisito del enunciado con su carpeta.
 
 Ver [`CONTRIBUTING.md`](CONTRIBUTING.md): flujo spec → feature, ramas, Conventional Commits y pull requests.

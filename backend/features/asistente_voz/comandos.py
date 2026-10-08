@@ -16,7 +16,7 @@ def normalizar(texto: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9 ]+", " ", sin_tildes.lower()).split())
 
 
-def interpretar(texto: str) -> dict:
+def interpretar(texto: str, emocion: str | None = None) -> dict:
     limpio = normalizar(texto)
     for palabra in PALABRAS_ACTIVACION:
         if limpio.startswith(palabra + " "):
@@ -35,11 +35,14 @@ def interpretar(texto: str) -> dict:
             "reconocido": False,
             "modelo": None,
             "parametros": {},
+            "emocion": emocion,
             "respuesta_texto": "No entendí el comando. Puede pedirme, por ejemplo, el precio del bitcoin.",
         }
     return {
         "reconocido": True,
         "modelo": mejor.info["slug"],
         "parametros": {},  # TODO(Dev B): extraer parámetros del texto cuando el modelo lo requiera
+        "emocion": emocion,
+        # TODO(Dev B): adaptar el tono de la respuesta a `emocion` (ver SPEC.md de esta carpeta)
         "respuesta_texto": f"Consultando el modelo: {mejor.info['nombre']}.",
     }

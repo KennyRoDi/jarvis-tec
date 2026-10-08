@@ -102,11 +102,22 @@ Metadatos del modelo más las métricas de evaluación del último entrenamiento
   "comandos": ["precio de un auto", "cuánto vale mi carro"],
   "entrenado": true,
   "metricas": { "r2": 0.95, "mae": 0.61, "rmse": 0.98 },
-  "entrada_ejemplo": { "year": 2014, "present_price": 5.59, "...": "..." }
+  "entrada_ejemplo": { "year": 2014, "present_price": 5.59, "...": "..." },
+  "esquema_entrada": {
+    "type": "object",
+    "required": ["year", "present_price", "..."],
+    "properties": {
+      "year": { "type": "integer", "minimum": 1990, "maximum": 2030 },
+      "fuel_type": { "type": "string", "enum": ["Petrol", "Diesel", "CNG"] }
+    }
+  }
 }
 ```
 
-`metricas` es `null` si el modelo no está entrenado.
+- `metricas` es `null` si el modelo no está entrenado.
+- `entrada_ejemplo` sirve para prellenar el formulario del modelo en la interfaz.
+- `esquema_entrada` es el JSON Schema del cuerpo de `/predecir` (generado desde la clase `Entrada` del
+  `router.py`). La interfaz construye el formulario de cada modelo a partir de él, sin código propio por modelo.
 
 ### `POST /api/modelos/{slug}/predecir`
 
@@ -162,22 +173,32 @@ Interpreta un texto (transcrito o escrito) y lo asocia a un modelo de ML.
 
 **Cuerpo**
 ```json
-{ "texto": "JarvisTEC precio del bitcoin para mañana" }
+{ "texto": "JarvisTEC precio del bitcoin para mañana", "emocion": "tristeza" }
 ```
+
+| Campo     | Tipo           | Requerido | Notas                                                                 |
+|-----------|----------------|-----------|-----------------------------------------------------------------------|
+| `texto`   | string         | sí        | Texto transcrito o escrito                                            |
+| `emocion` | string \| null | no        | Última `emocion_dominante` detectada por §5 (una de sus 8 claves)     |
 
 **200**
 ```json
 {
   "reconocido": true,
   "modelo": "bitcoin",
-  "parametros": {},
-  "respuesta_texto": "Consultando el modelo de predicción del precio del Bitcoin."
+  "parametros": { "dias_adelante": 1 },
+  "emocion": "tristeza",
+  "respuesta_texto": "Te noto algo decaído; vamos a ver si el bitcoin te da una buena noticia. Consultando el modelo de predicción del precio del Bitcoin."
 }
 ```
 
 - Si `reconocido` es `false`, `modelo` es `null` y `respuesta_texto` explica que no se entendió el comando.
-- El frontend usa `modelo` + `parametros` para llamar a `POST /api/modelos/{slug}/predecir`
-  (los parámetros faltantes se piden al usuario en la interfaz).
+- **Decisión según la emoción** (enunciado: "el sistema interpretará el rostro y la voz del usuario y
+  tomará una decisión"): si llega `emocion`, `respuesta_texto` adapta el tono a esa emoción y `emocion`
+  la devuelve tal cual. Si no llega, `emocion` es `null` y la respuesta es neutral.
+- El frontend usa `modelo` + `parametros` para llamar a `POST /api/modelos/{slug}/predecir`.
+  Si `parametros` completa el `esquema_entrada` (o el modelo no requiere entrada, como las series de
+  tiempo), la predicción se **ejecuta de inmediato**; si no, se abre el formulario del modelo prellenado.
 - La asociación texto → modelo usa la lista `comandos` de cada modelo (ver `GET /api/modelos`).
 
 ---
@@ -237,3 +258,4 @@ Ver `backend/.env.example`. El archivo `.env` **nunca** se sube a git.
 |------------|-------|--------------------------------|
 | 2026-10-03 | —     | Versión inicial del contrato   |
 | 2026-10-03 | —     | Modo escritorio (PyWebView, mismo origen) y regla de mocks |
+| 2026-10-03 | —     | `esquema_entrada` en `/info`; `emocion` en `/api/asistente/comando` (decisión según la emoción) |

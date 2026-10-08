@@ -26,9 +26,11 @@ Cualquier nueva característica (ej. un nuevo modelo de ML) comienza en la carpe
 
 ### Paso 2: Desarrollo por Características (FDD)
 Todo el código del backend debe residir en su respectiva rebanada vertical dentro de `backend/features/`.
-1. Crea una carpeta para tu modelo: `backend/features/nombre_del_modelo/`.
-2. Incluye dentro TODO lo necesario: `router.py`, `model.py`, `dataset.csv` (si es pequeño), y `test_model.py`.
-3. El frontend consumirá la API de forma independiente.
+1. Lee el `SPEC.md` de la carpeta asignada (las 10 carpetas `backend/features/modelo_XX_<slug>/` ya existen).
+2. Todo vive dentro de esa carpeta: `dataset.csv` (si es pequeño; si no, en `data/`), `train.py`, `router.py`,
+   `test_modelo.py` y `analisis.md`. Referencia completa: `modelo_02_autos`.
+3. Al terminar, marca los criterios de aceptación del `SPEC.md` y actualiza el estado en `CLAUDE.md`.
+4. El frontend consumirá la API de forma independiente.
 
 ---
 

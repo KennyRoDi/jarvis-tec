@@ -22,6 +22,10 @@ PyWebView (ventana nativa)  ──►  http://127.0.0.1:8000/       interfaz web
 
 ## Reglas estrictas
 
+0. **Lee el `SPEC.md` de la carpeta antes de trabajar en ella** (cada feature, `core/`, `frontend/` y
+   `docs_latex/` tienen uno), y marca sus criterios de aceptación al terminar. `specs/alcance_spec.md`
+   relaciona cada requisito del enunciado con su carpeta: es el checklist de la entrega.
+
 1. **No modificar `backend/main.py` para agregar rutas.** Toda feature expone `router` (un `APIRouter`) en
    `backend/features/<feature>/router.py`; `main.py` lo descubre e incluye solo. Si además exporta
    `MODELO_INFO`, queda registrada como modelo de ML (`GET /api/modelos`).
@@ -46,7 +50,8 @@ PyWebView (ventana nativa)  ──►  http://127.0.0.1:8000/       interfaz web
 - `router.py` de modelo: `MODELO_INFO`, esquema `Entrada` (pydantic) y `POST /predecir` usando
   `core.modelos.predecir_con_pipeline`.
 - Datos crudos grandes o compartidos en `data/`; cada feature guarda su `dataset.csv`.
-- Pruebas en `backend/tests/` con `TestClient`; todo endpoint nuevo lleva su prueba.
+- Pruebas: las transversales en `backend/tests/`; las de cada feature en su carpeta (`test_*.py`), usando
+  las fixtures `cliente` y `assert_error` de `backend/conftest.py`. Todo endpoint nuevo lleva su prueba.
 
 ## Comandos
 
@@ -61,7 +66,7 @@ PyWebView (ventana nativa)  ──►  http://127.0.0.1:8000/       interfaz web
 | Frontend con mocks         | `cd frontend && VITE_USAR_MOCKS=true npm run dev`                 |
 | Frontend para escritorio   | `cd frontend && npm run build` (PyWebView sirve `frontend/dist`)  |
 
-**Linux:** PyWebView usa GTK/WebKit2 del sistema (`python3-gi`, `gir1.2-webkit2-4.1`); crear el venv con
+**Linux:** si se lanza desde la terminal del VS Code instalado por snap, GTK falla por bibliotecas de snap: usar una terminal normal. PyWebView usa GTK/WebKit2 del sistema (`python3-gi`, `gir1.2-webkit2-4.1`); crear el venv con
 `python3 -m venv --system-site-packages venv`. **Windows:** usa Edge WebView2, no requiere nada extra.
 
 ## Estado del proyecto
@@ -72,12 +77,13 @@ _Actualizar al cerrar cada tarea._
 |------------------------------|------------------------------------------------------------------------|
 | Contrato API                 | v0.1 (`specs/api_rest_spec.md`)                                        |
 | Ventana PyWebView + FastAPI  | ✅ `backend/main.py` (UI de prueba en `backend/ui_prueba/`)            |
+| Cámara/micrófono en la ventana | ✅ Linux (`core/escritorio.py`, verificado) · ⏳ Windows sin verificar |
 | Registro automático features | ✅                                                                     |
 | Modelo 02 autos              | ✅ entrenado (R² 0.962)                                                |
 | Modelos 01, 03–10            | ⏳ plantillas con TODO; faltan datasets de Kaggle                      |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones (Azure Face)       | ⏳ responde 501. Azure retiró el atributo `emotion`: validar con el profesor |
-| Comandos de voz → modelo     | ✅ por frases en `MODELO_INFO["comandos"]`                             |
+| Comandos de voz → modelo     | 🟡 reconoce el modelo; faltan parámetros y el tono según la emoción   |
 | Interfaz Jarvis (React)      | ⏳ scaffold de Vite + cliente API + mocks                              |
 | Documento LaTeX              | ⏳ esqueleto en `docs_latex/main.tex`                                  |
 

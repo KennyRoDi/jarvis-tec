@@ -46,7 +46,7 @@ const real = {
   // §4 Asistente de voz
   transcribir: (audioBlob, idioma = 'es-CR') =>
     solicitar('/api/voz/transcribir', archivo('audio', audioBlob, 'audio.webm', { idioma })),
-  interpretarComando: (texto) => solicitar('/api/asistente/comando', json({ texto })),
+  interpretarComando: (texto, emocion = null) => solicitar('/api/asistente/comando', json({ texto, emocion })),
 
   // §5 Visión facial
   detectarEmocion: (imagenBlob) => solicitar('/api/vision/emocion', archivo('imagen', imagenBlob, 'frame.jpg')),
