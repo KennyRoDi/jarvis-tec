@@ -207,7 +207,7 @@ Interpreta un texto (transcrito o escrito) y lo asocia a un modelo de ML.
 
 ### `POST /api/vision/emocion`
 
-Detecta rostros en un frame de la cámara y estima la emoción de cada uno.
+Detecta rostros en un frame de la cámara (Azure Face) y estima la emoción de cada uno (Google Cloud Vision).
 
 **Cuerpo:** `multipart/form-data`
 
@@ -245,7 +245,7 @@ Detecta rostros en un frame de la cámara y estima la emoción de cada uno.
 |-----------------------------------|---------------------------------------------|
 | `AZURE_FACE_ENDPOINT`             | Endpoint del recurso Azure AI Face          |
 | `AZURE_FACE_KEY`                  | Clave del recurso Azure AI Face             |
-| `GOOGLE_APPLICATION_CREDENTIALS`  | Ruta al JSON de la cuenta de servicio de GCP |
+| `GOOGLE_APPLICATION_CREDENTIALS`  | Ruta al JSON de la cuenta de servicio de GCP (Speech-to-Text y Vision) |
 | `CORS_ORIGENES`                   | Orígenes permitidos, separados por coma     |
 
 Ver `backend/.env.example`. El archivo `.env` **nunca** se sube a git.

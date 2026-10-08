@@ -12,7 +12,7 @@ Instituto Tecnológico de Costa Rica, Campus Tecnológico Local San Carlos.
 ┌──────────────────────────── App de escritorio (PyWebView) ────────────────────────────┐
 │  Interfaz web (React)  ──fetch /api/*──►  FastAPI (hilo en segundo plano, :8000)       │
 │                                            ├─ features/asistente_voz  → Google Speech  │
-│                                            ├─ features/vision_facial  → Azure Face     │
+│                                            ├─ features/vision_facial  → Azure + Vision │
 │                                            └─ features/modelo_01 … modelo_10 (sklearn) │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -23,7 +23,7 @@ Instituto Tecnológico de Costa Rica, Campus Tecnológico Local San Carlos.
 | API REST          | FastAPI + Uvicorn                                            |
 | Machine Learning  | scikit-learn, pandas, NumPy                                  |
 | Voz a texto       | Google Cloud Speech-to-Text                                  |
-| Emociones         | Azure Face API                                               |
+| Emociones         | Azure Face (detección) + Google Cloud Vision (emoción)       |
 | Interfaz          | React (Vite)                                                 |
 | Documentación     | LaTeX (Overleaf)                                             |
 

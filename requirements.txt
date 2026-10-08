@@ -19,6 +19,7 @@ seaborn==0.13.2
 # Servicios cloud
 azure-cognitiveservices-vision-face==0.6.1
 google-cloud-speech==2.41.0
+google-cloud-vision==3.16.0
 
 # Pruebas
 pytest==9.1.1

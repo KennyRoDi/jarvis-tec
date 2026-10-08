@@ -8,24 +8,29 @@
 Agente inteligente que **reconoce el sentimiento de la persona a partir de un frame de la cámara en tiempo
 real** (alcance A1). La emoción dominante alimenta la decisión del asistente (`/api/asistente/comando`).
 
-## ⚠️ Decisión pendiente: proveedor de emociones
+## Proveedor: opción 1, Azure + Google Vision (decidida el 2026-10-08)
 
 El enunciado exige Azure para reconocer rostros, pero **Microsoft retiró el atributo `emotion` de Face API**
-(anunciado en junio de 2022; los recursos nuevos no tienen acceso).
+en 2022. Por eso:
 
-1. Crear el recurso Azure AI Face y llamar `detect_with_stream(..., return_face_attributes=["emotion"])`.
-2. Si responde con emociones, implementar solo con Azure.
-3. Si lo rechaza, **consultar al profesor** con la evidencia (mensaje de error). Alternativa propuesta, que
-   el enunciado permite en esta entrega: Azure para detectar el rostro (`rectangulo`) y Google Cloud Vision
-   `face_detection` para la emoción. Vision devuelve probabilidades cualitativas para alegría, tristeza,
-   enojo y sorpresa; convertirlas así: `VERY_UNLIKELY` 0.0 · `UNLIKELY` 0.25 · `POSSIBLE` 0.5 ·
-   `LIKELY` 0.75 · `VERY_LIKELY` 1.0. `neutral` = 1 − máximo; el resto de las claves, 0.0.
+| Paso | Servicio | Archivo | Aporta |
+|------|----------|---------|--------|
+| 1 | Azure Face `detect_with_stream` (sin atributos) | `azure_face.py` | `rectangulo` de cada rostro ("Debe usar Azure para reconocer rostros") |
+| 2 | Google Cloud Vision `face_detection` | `google_vision.py` | Probabilidad de alegría, tristeza, enojo y sorpresa |
+| 3 | Combinación | `azure_face.detectar_emociones` | Lista `rostros` del contrato §5 |
 
-Con cualquiera de las dos opciones, **el contrato §5 no cambia**: la interfaz no se entera del proveedor.
+Conversión de probabilidad a puntaje: `VERY_UNLIKELY` 0.0 · `UNLIKELY` 0.25 · `POSSIBLE` 0.5 · `LIKELY` 0.75 ·
+`VERY_LIKELY` 1.0 (ya definida en `google_vision.py`). Vision cubre 4 emociones: `felicidad`, `tristeza`,
+`enojo` y `sorpresa`; `miedo`, `desprecio` y `disgusto` quedan en 0.0, y `neutral` = 1 − máximo.
+
+Los rostros de ambos servicios se emparejan por posición (ordenados por `x`). Si Google no detecta un rostro
+que Azure sí, ese rostro va con `neutral` = 1.0.
+
+Pendiente: informar la decisión al profesor (evidencia: error de Azure al pedir `emotion`).
 
 ## Tareas
 
-1. Implementar `azure_face.py` (y, si aplica, un `google_vision.py` en esta carpeta) según la decisión.
+1. Implementar `azure_face.py` (detección) y `google_vision.py` (emoción) según la tabla de arriba.
 2. Mapear siempre a las 8 claves fijas de `EMOCIONES`; `emocion_dominante` = clave con mayor puntaje.
 3. Errores del proveedor → `ApiError(502, "SERVICIO_EXTERNO", …)`. Sin rostros → `cantidad: 0` (no es error).
 4. Respetar el límite del plan gratuito: la interfaz envía como máximo un frame cada 3–5 s.
@@ -38,7 +43,8 @@ Tipo: agente reflejo simple (percepción → clasificación), cuyo resultado usa
 
 ## Criterios de aceptación
 
-- [ ] Decisión del proveedor tomada y registrada en `specs/alcance_spec.md` y en `CLAUDE.md`
+- [x] Decisión del proveedor tomada y registrada en `specs/alcance_spec.md` y en `CLAUDE.md`
+- [ ] Decisión informada al profesor
 - [ ] Una foto real con un rostro devuelve `cantidad ≥ 1` y las 8 claves (prueba de integración con una
       imagen de muestra en `muestras/`, marcada con `skip` si no hay credenciales)
 - [ ] Una foto sin rostros devuelve `cantidad: 0`

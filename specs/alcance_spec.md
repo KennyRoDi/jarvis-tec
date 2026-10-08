@@ -31,7 +31,7 @@ Leyenda: ✅ cumplido · 🟡 estructura lista, falta implementar · ⏳ pendien
 
 | Alcance                                                                    | Cómo se cumple                                                                 | Estado |
 |----------------------------------------------------------------------------|--------------------------------------------------------------------------------|--------|
-| A1. Agente inteligente que reconoce el sentimiento en una foto de cámara en tiempo real (frame de video) | Cámara en la interfaz → `POST /api/vision/emocion` (Azure Face) → [vision_facial](../backend/features/vision_facial/SPEC.md) | ⏳ |
+| A1. Agente inteligente que reconoce el sentimiento en una foto de cámara en tiempo real (frame de video) | Cámara en la interfaz → `POST /api/vision/emocion` (Azure Face + Google Vision) → [vision_facial](../backend/features/vision_facial/SPEC.md) | ⏳ |
 | A2. Agente inteligente que convierte audio a texto y **ejecuta** la instrucción | Micrófono → `POST /api/voz/transcribir` (Google) → `/api/asistente/comando` → `/predecir` | ⏳ |
 | A3. Al menos 10 algoritmos de aprendizaje automático de la lista           | `backend/features/modelo_01 … modelo_10`, cada uno con su `SPEC.md`            | 🟡 1/10 |
 | A4. Conjunto de comandos asociados a los modelos (ej. JarvisTEC "tipo de cambio para mañana") | `MODELO_INFO["comandos"]` de cada modelo + catálogo en los anexos del documento | 🟡 |
@@ -42,7 +42,7 @@ Leyenda: ✅ cumplido · 🟡 estructura lista, falta implementar · ⏳ pendien
 
 | Nota                                                       | Cómo se cumple                                   | Estado |
 |------------------------------------------------------------|--------------------------------------------------|--------|
-| Usar Azure para reconocer rostros                          | `vision_facial` con Azure Face                   | ❓ Azure retiró el atributo `emotion` en 2022; ver [SPEC](../backend/features/vision_facial/SPEC.md) |
+| Usar Azure para reconocer rostros                          | Azure Face detecta el rostro; Google Vision da la emoción (opción 1) | 🟡 decidido el 2026-10-08, falta informar al profesor; ver [SPEC](../backend/features/vision_facial/SPEC.md) |
 | Usar Speech-to-Text para pasar audio a texto               | `asistente_voz` con Google Cloud Speech-to-Text  | ⏳ |
 | Solo en esta entrega se permiten APIs de Google/Azure para sentimientos y voz | El contrato no depende del proveedor: en una etapa posterior se reemplaza la implementación sin tocar el frontend | ✅ diseño |
 

@@ -33,7 +33,7 @@ PyWebView (ventana nativa)  ──►  http://127.0.0.1:8000/       interfaz web
    desde el mismo servidor FastAPI (mismo origen, sin CORS). El frontend usa rutas relativas `/api/...`.
 3. **API = FastAPI.** Respuestas JSON limpias. Los errores se lanzan con `core.errores.ApiError(status, codigo, mensaje)`
    y siempre salen con el formato `{"error": {"codigo", "mensaje", "detalle"}}` de la spec (§1.1).
-4. **Servicios cloud obligatorios.** Rostros/emociones: Azure Face (no inventar modelos locales).
+4. **Servicios cloud obligatorios.** Rostros: Azure Face; emoción: Google Cloud Vision (Azure retiró `emotion`). No inventar modelos locales.
    Voz a texto: Google Cloud Speech-to-Text. Credenciales solo en `backend/.env` (ver `backend/.env.example`).
 5. **Paralelismo (2 devs).** No tocar archivos fuera de la feature asignada.
    - Dev A: `backend/features/modelo_XX_*`.
@@ -82,7 +82,7 @@ _Actualizar al cerrar cada tarea._
 | Modelo 02 autos              | ✅ entrenado (R² 0.962)                                                |
 | Modelos 01, 03–10            | ⏳ plantillas con TODO; faltan datasets de Kaggle                      |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
-| Emociones (Azure Face)       | ⏳ responde 501. Azure retiró el atributo `emotion`: validar con el profesor |
+| Emociones                    | ⏳ responde 501. Decidido: Azure detecta el rostro, Google Vision da la emoción |
 | Comandos de voz → modelo     | 🟡 reconoce el modelo; faltan parámetros y el tono según la emoción   |
 | Interfaz Jarvis (React)      | ⏳ scaffold de Vite + cliente API + mocks                              |
 | Documento LaTeX              | ⏳ esqueleto en `docs_latex/main.tex`                                  |

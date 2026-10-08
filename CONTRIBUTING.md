@@ -63,7 +63,7 @@ No introduzcas tecnologías fuera de este stack sin aprobación:
 * **Escritorio:** PyWebView
 * **Backend API:** FastAPI + Uvicorn + Python 3.x
 * **Modelos ML:** Scikit-Learn, Pandas (10 modelos aislados)
-* **Servicios Cognitivos:** Azure Face API (Visión), Google Cloud Speech-to-Text (Voz)
+* **Servicios Cognitivos:** Azure Face API (detección de rostros), Google Cloud Vision (emoción), Google Cloud Speech-to-Text (voz)
 * **Frontend:** Tecnologías Web (HTML/CSS/JS o framework acordado en `CLAUDE.md`)
 
 ---
