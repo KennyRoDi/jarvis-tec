@@ -1,22 +1,135 @@
 {
   "metricas": {
-    "r2": 0.962,
-    "mae": 0.6121,
-    "rmse": 0.9352,
-    "cv_r2_media": 0.8846,
-    "baseline_regresion_lineal": {
-      "r2": 0.849,
-      "mae": 1.2162,
-      "rmse": 1.8652
+    "r2": 0.9542,
+    "mae": 0.697,
+    "rmse": 1.0862,
+    "ic95": {
+      "rmse": [
+        0.793,
+        1.3419
+      ],
+      "mae": [
+        0.4968,
+        0.9061
+      ],
+      "r2": [
+        0.8696,
+        0.9806
+      ]
+    },
+    "modelo": "random forest (razón)",
+    "cv_r2_media": 0.971,
+    "comparacion_cv": {
+      "precio medio (línea base)": {
+        "cv_rmse": 4.887,
+        "cv_rmse_desv": 0.844,
+        "cv_r2": -0.01
+      },
+      "regla de depreciación (línea base)": {
+        "cv_rmse": 2.363,
+        "cv_rmse_desv": 0.856,
+        "cv_r2": 0.754
+      },
+      "regresión lineal": {
+        "cv_rmse": 1.731,
+        "cv_rmse_desv": 0.395,
+        "cv_r2": 0.872
+      },
+      "random forest": {
+        "cv_rmse": 1.507,
+        "cv_rmse_desv": 0.894,
+        "cv_r2": 0.892
+      },
+      "gradient boosting": {
+        "cv_rmse": 2.125,
+        "cv_rmse_desv": 0.857,
+        "cv_r2": 0.807
+      },
+      "random forest (razón)": {
+        "cv_rmse": 0.792,
+        "cv_rmse_desv": 0.176,
+        "cv_r2": 0.971
+      },
+      "gradient boosting (razón)": {
+        "cv_rmse": 0.823,
+        "cv_rmse_desv": 0.165,
+        "cv_r2": 0.97
+      },
+      "regresión lineal (log-razón)": {
+        "cv_rmse": 1.156,
+        "cv_rmse_desv": 0.75,
+        "cv_r2": 0.937
+      }
+    },
+    "baseline_media": {
+      "r2": -0.0,
+      "mae": 3.3269,
+      "rmse": 5.0768
+    },
+    "baseline_depreciacion": {
+      "r2": 0.5545,
+      "mae": 1.8107,
+      "rmse": 3.3886
+    },
+    "n_entrenamiento": 239,
+    "n_prueba": 60,
+    "prueba_de_los_demas_candidatos": {
+      "precio medio (línea base)": {
+        "r2": -0.0,
+        "mae": 3.3269,
+        "rmse": 5.0768
+      },
+      "regla de depreciación (línea base)": {
+        "r2": 0.5545,
+        "mae": 1.8107,
+        "rmse": 3.3886
+      },
+      "regresión lineal": {
+        "r2": 0.7528,
+        "mae": 1.4729,
+        "rmse": 2.524
+      },
+      "random forest": {
+        "r2": 0.5007,
+        "mae": 1.5023,
+        "rmse": 3.5874
+      },
+      "gradient boosting": {
+        "r2": 0.6947,
+        "mae": 1.3806,
+        "rmse": 2.805
+      },
+      "gradient boosting (razón)": {
+        "r2": 0.965,
+        "mae": 0.5887,
+        "rmse": 0.9502
+      },
+      "regresión lineal (log-razón)": {
+        "r2": 0.9633,
+        "mae": 0.6028,
+        "rmse": 0.9731
+      }
+    },
+    "experimento_extrapolacion": {
+      "autos_de_entrenamiento": 271,
+      "autos_caros_de_prueba": 28,
+      "random forest": {
+        "rmse": 8.978,
+        "sesgo": -5.799
+      },
+      "random forest (razón)": {
+        "rmse": 2.053,
+        "sesgo": 0.297
+      }
     }
   },
   "entrada_ejemplo": {
     "year": 2016,
-    "present_price": 0.57,
-    "kms_driven": 24000,
+    "present_price": 11.8,
+    "kms_driven": 9010,
     "owner": 0,
     "fuel_type": "Petrol",
-    "seller_type": "Individual",
-    "transmission": "Automatic"
+    "seller_type": "Dealer",
+    "transmission": "Manual"
   }
 }
