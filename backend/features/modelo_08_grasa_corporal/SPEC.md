@@ -39,6 +39,7 @@ permitidos: de ahí sale el formulario de la interfaz (`esquema_entrada`).
 
 - "grasa corporal"
 - "masa corporal"
+- "porcentaje de grasa"
 
 Frases cortas y en minúscula; no deben coincidir con las de otro modelo.
 
@@ -70,7 +71,7 @@ Un modelo vale 5 pts (creación) + 1 (aplicación) + 1 (API) solo si cumple **to
 - [x] Modelo en un `Pipeline` (el mismo preprocesamiento en el entrenamiento y en la API)
 - [x] Evaluación en el conjunto de prueba con las métricas de `specs/modelos_spec.md` y comparación con una línea base
 - [x] `analisis.md` con las 6 secciones redactadas y referencias científicas que justifican el algoritmo
-- [ ] Verificar las referencias de `analisis.md` (autores, páginas, DOI) y pasarlas a `docs_latex/referencias.bib`
+- [x] Referencias de `analisis.md` verificadas por búsqueda web y pasadas a `docs_latex/referencias.bib` (falta confirmar las páginas de Siri 1956)
 
 **API REST**
 - [x] `Entrada` con campos tipados y validados (sin `extra="allow"`)

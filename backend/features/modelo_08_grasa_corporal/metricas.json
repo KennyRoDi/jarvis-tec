@@ -41,7 +41,7 @@
     "r2_con_density_fuga": 0.9936
   },
   "entrada_ejemplo": {
-    "age": 23.0,
+    "age": 23,
     "weight_kg": 72.46,
     "height_cm": 183.5,
     "neck_cm": 35.5,

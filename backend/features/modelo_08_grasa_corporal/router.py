@@ -1,6 +1,6 @@
 """Modelo 08 · Predicción del porcentaje de grasa corporal.
 
-Contrato: specs/api_rest_spec.md §3 · Esquema de entrada: specs/modelos_spec.md (08 · grasa_corporal).
+Contrato: specs/api_rest_spec.md §3 · Entrada y criterios: SPEC.md de esta carpeta.
 Los límites de Entrada son los del dataset completo con un margen (rechazan datos absurdos); el aviso de
 extrapolación usa el rango de entrenamiento, que es más estrecho (ver analisis.md).
 """

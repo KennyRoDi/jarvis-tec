@@ -1,7 +1,8 @@
 """Pruebas del modelo 08 · grasa corporal (specs/api_rest_spec.md §3). Usan el modelo entrenado real."""
 import pytest
 
-from core.modelos import REGISTRO
+from core.modelos import REGISTRO, predecir_con_pipeline
+from features.modelo_08_grasa_corporal.router import CARPETA
 
 ENTRADA = {
     "age": 45, "weight_kg": 80.0, "height_cm": 178.0, "neck_cm": 38.0, "chest_cm": 100.0, "abdomen_cm": 92.0,
@@ -23,9 +24,12 @@ def test_predecir(cliente):
 
 
 @entrenado
-def test_predecir_prediccion_nunca_es_negativa(cliente):
-    delgado = {**ENTRADA, "weight_kg": 56, "abdomen_cm": 70, "chest_cm": 85, "hip_cm": 86, "age": 22}
-    assert cliente.post("/api/modelos/grasa_corporal/predecir", json=delgado).json()["prediccion"] >= 0
+def test_prediccion_negativa_del_modelo_se_recorta_a_cero(cliente):
+    """La esquina inferior del rango válido hace que Lasso prediga un valor negativo: la API debe devolver 0."""
+    minimo = {**ENTRADA, "age": 18, "weight_kg": 45, "abdomen_cm": 65, "chest_cm": 75, "hip_cm": 80}
+    crudo, _ = predecir_con_pipeline(CARPETA, "grasa_corporal", minimo)
+    assert crudo < 0, "el caso ya no ejercita el recorte: elegir otra entrada"
+    assert cliente.post("/api/modelos/grasa_corporal/predecir", json=minimo).json()["prediccion"] == 0.0
 
 
 @entrenado
@@ -57,3 +61,4 @@ def test_info_incluye_metricas_y_esquema(cliente):
     assert {"r2", "mae", "rmse"} <= set(cuerpo["metricas"])
     assert set(ENTRADA) == set(cuerpo["esquema_entrada"]["properties"])
     assert set(ENTRADA) == set(cuerpo["entrada_ejemplo"])
+    assert isinstance(cuerpo["entrada_ejemplo"]["age"], int)  # el formulario recibe un entero, no 23.0

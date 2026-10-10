@@ -92,7 +92,16 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   (en el 08, un único registro extremo) en vez de ajustar hasta que el número guste.
 - Guardar el rango de entrenamiento en el artefacto (`rango=`) y avisar en `texto` cuando se extrapola.
 - El formulario usa unidades del usuario (kg, cm): convertir en `train.py`, no en el router.
-- Las referencias de `analisis.md` se escriben con cuidado, pero **deben verificarse** antes de pasar al documento.
+- `entrada_ejemplo`: usar `X_test.iloc[[0]].to_dict("records")[0]` (conserva los enteros); con `.iloc[0]` pandas
+  convierte todo a `float` y el formulario recibiría `23.0` en un campo entero.
+- Las pruebas de límites deben ejercitar de verdad la línea que protegen (p. ej. afirmar que la predicción
+  cruda es negativa antes de comprobar el recorte a 0); un test que pasa sin la línea es un test débil.
+- Las referencias de `analisis.md` se verifican por búsqueda web (autores, páginas, DOI) antes de pasarlas a
+  `docs_latex/referencias.bib`; solo entran al `.bib` las verificadas.
+- Revisar la literatura del dataset: suele documentar registros erróneos conocidos (en el 08, los casos 42, 48,
+  76, 96 y 182) y conviene citarlos al justificar la limpieza.
+- Cada modelo se entrega en su rama `feature/modelo-XX-slug` con PR; un subagente lo verifica de forma
+  independiente (pruebas, fuga de información, métricas reproducibles, contrato, coherencia de documentos).
 
 ## Notas operativas
 
@@ -127,7 +136,7 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Cámara/micrófono en la ventana | ✅ Linux (`core/escritorio.py`, verificado) · ⏳ Windows: lo verifica el compañero |
 | Registro automático features | ✅                                                                     |
 | Modelo 02 autos              | ✅ entrenado (R² 0.962)                                                |
-| Modelo 08 grasa corporal     | ✅ entrenado (Lasso, R² prueba 0.557 / CV 0.695); falta interfaz y verificar referencias |
+| Modelo 08 grasa corporal     | ✅ entrenado (Lasso, R² prueba 0.557 / CV 0.695); falta interfaz |
 | Modelos 01, 03–07, 09, 10    | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |

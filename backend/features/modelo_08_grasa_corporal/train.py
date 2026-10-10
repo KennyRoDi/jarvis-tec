@@ -146,7 +146,7 @@ def main() -> None:
 
     # Rango visto en entrenamiento: los modelos lineales extrapolan mal fuera de él (ver analisis.md) y el router avisa.
     rango = {c: [float(X_train[c].min()), float(X_train[c].max())] for c in VARIABLES}
-    guardar_modelo(CARPETA, pipeline, metricas, entrada_ejemplo=X_test.iloc[0].to_dict(), variables=VARIABLES, rango=rango)
+    guardar_modelo(CARPETA, pipeline, metricas, entrada_ejemplo=X_test.iloc[[0]].to_dict("records")[0], variables=VARIABLES, rango=rango)
     print("\nMétricas:", {k: v for k, v in metricas.items() if k != "comparacion_cv"})
     # 6. Conclusión: ver analisis.md
 

@@ -17,8 +17,8 @@ tengo?" a partir de los datos que el usuario proporciona en el formulario.
 
 ## 2. Entendimiento de los datos (0.5 pts)
 
-El conjunto de datos reúne 252 hombres adultos con mediciones antropométricas [Penrose1985; Johnson1996]. No
-presenta valores nulos. Todas las variables son numéricas.
+El conjunto de datos reúne 252 hombres adultos con mediciones antropométricas, cuyo porcentaje de grasa se estimó
+mediante pesaje hidrostático [Penrose1985; Johnson1996]. No presenta valores nulos. Todas las variables son numéricas.
 
 | Variable (original)      | Descripción                          | Unidad original | Unidad en el modelo |
 |--------------------------|--------------------------------------|-----------------|---------------------|
@@ -50,7 +50,8 @@ evitar. Por ello se descartó la variable.
 
 **Datos atípicos.** Se descartaron únicamente dos registros físicamente imposibles: uno con 0 % de grasa
 (fila 181) y otro con una estatura de 75 cm y un índice de masa corporal de 165 (fila 41, probablemente un
-error de digitación). Se conservaron los demás extremos por ser valores posibles, incluida una persona de
+error de digitación). Ambos coinciden con casos que la literatura señala como erróneos (casos 42 y 182 en la
+numeración original) [Johnson1996]. Se conservaron los demás extremos por ser valores posibles, incluida una persona de
 165 kg con abdomen de 148 cm (fila 38), cuyo efecto se analiza en la sección 5. Quedan **250 registros**.
 
 ## 4. Modelo (2 pts)
@@ -121,25 +122,29 @@ de forma apreciable.
 Con medidas corporales simples es posible estimar el porcentaje de grasa corporal con un error medio de
 aproximadamente 4 puntos porcentuales, frente a 6.5 de la predicción por la media. La circunferencia
 abdominal concentra casi toda la información útil: un modelo lineal regularizado que usa solo cinco variables
-rinde igual que uno con las trece y mejor que un Random Forest.
+rinde de forma comparable a uno con las trece y no peor que un Random Forest (en validación cruzada; el Random
+Forest no se evaluó en el conjunto de prueba).
 
 El hallazgo metodológico más importante fue la fuga de información de `Density`: incluirla produce un R² de
 0.99 que es engañoso, porque la variable ya contiene la respuesta.
 
-**Limitaciones.** (1) El conjunto tiene solo 252 hombres adultos: el modelo **no es válido para mujeres ni
+**Limitaciones.** (0) La literatura también señala posibles errores de un dígito en la densidad de los casos 48, 76
+y 96 [Johnson1996]; como `BodyFat` se deriva de la densidad, esos tres objetivos podrían estar desviados. Se
+conservaron porque no se sabe qué dígito es el erróneo, y no se evaluó el efecto de excluirlos. (1) El conjunto tiene solo 252 hombres adultos: el modelo **no es válido para mujeres ni
 para menores**, y las estimaciones son orientativas, no diagnósticas. (2) El modelo extrapola mal con medidas
 extremas, como mostró la fila 38; por eso la API compara cada entrada con el rango de entrenamiento y advierte
-que el resultado es poco confiable cuando lo excede. (3) Con 50 filas de prueba, la incertidumbre de las
-métricas es alta. Como trabajo futuro se propone ampliar la muestra, incluir mujeres y evaluar transformaciones
+que el resultado es poco confiable cuando lo excede. (3) Con personas muy delgadas el modelo puede estimar valores cercanos a 0 %, que no son fisiológicamente
+creíbles; la API no avisa en ese caso porque las medidas sí están dentro del rango de entrenamiento.
+(4) Con 50 filas de prueba, la incertidumbre de las métricas es alta. Como trabajo futuro se propone ampliar la muestra, incluir mujeres y evaluar transformaciones
 que reduzcan la extrapolación.
 
-## Referencias (agregar a `docs_latex/referencias.bib`)
+## Referencias (en `docs_latex/referencias.bib`)
 
-- **[Siri1956]** Siri, W. E. (1956). The gross composition of the body. *Advances in Biological and Medical Physics*, 4, 239–280.
-- **[Penrose1985]** Penrose, K. W., Nelson, A. G., & Fisher, A. G. (1985). Generalized body composition prediction equation for men using simple measurement techniques. *Medicine & Science in Sports & Exercise*, 17(2), 189.
-- **[Johnson1996]** Johnson, R. W. (1996). Fitting percentage of body fat to simple body measurements. *Journal of Statistics Education*, 4(1).
+- **[Siri1956]** Siri, W. E. (1956). The gross composition of the body. En J. H. Lawrence y C. A. Tobias (Eds.), *Advances in Biological and Medical Physics* (Vol. 4). Academic Press. *(Volumen y editores verificados; falta confirmar las páginas 239–280.)*
+- **[Penrose1985]** Penrose, K. W., Nelson, A. G., & Fisher, A. G. (1985). Generalized body composition prediction equation for men using simple measurement techniques [Resumen]. *Medicine & Science in Sports & Exercise*, 17(2), 189.
+- **[Johnson1996]** Johnson, R. W. (1996). Fitting percentage of body fat to simple body measurements. *Journal of Statistics Education*, 4(1). https://doi.org/10.1080/10691898.1996.11910505
 - **[Hoerl1970]** Hoerl, A. E., & Kennard, R. W. (1970). Ridge regression: Biased estimation for nonorthogonal problems. *Technometrics*, 12(1), 55–67.
-- **[Tibshirani1996]** Tibshirani, R. (1996). Regression shrinkage and selection via the lasso. *Journal of the Royal Statistical Society: Series B*, 58(1), 267–288.
-- **[Breiman2001]** Breiman, L. (2001). Random forests. *Machine Learning*, 45(1), 5–32.
+- **[Tibshirani1996]** Tibshirani, R. (1996). Regression shrinkage and selection via the lasso. *Journal of the Royal Statistical Society: Series B*, 58(1), 267–288. https://doi.org/10.1111/j.2517-6161.1996.tb02080.x
+- **[Breiman2001]** Breiman, L. (2001). Random forests. *Machine Learning*, 45(1), 5–32. https://doi.org/10.1023/A:1010933404324
 
-> Las referencias están citadas de memoria y deben verificarse (autores, páginas, DOI) antes de incluirlas en el documento final.
+> Verificadas por búsqueda web el 2026-10-09, salvo lo indicado en Siri (1956).
