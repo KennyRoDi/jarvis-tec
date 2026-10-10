@@ -90,7 +90,7 @@ cd frontend && npm install
 | 07 | Etapa de cirrosis                        | Clasificación  | ✅ F1 macro = 0.47 |
 | 08 | Porcentaje de grasa corporal             | Regresión      | ✅ R² = 0.56 (CV 0.70) |
 | 09 | Precio del aguacate                      | Regresión      | ✅ R² = 0.42 (temporal) |
-| 10 | Precio de acciones del S&P 500           | Regresión      | Pendiente     |
+| 10 | Precio de acciones del S&P 500           | Regresión      | ✅ sin habilidad sobre la deriva (honesto) |
 
 Fuentes de datos, variables objetivo y comandos de voz de cada modelo: [`specs/modelos_spec.md`](specs/modelos_spec.md).
 
