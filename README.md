@@ -87,7 +87,7 @@ cd frontend && npm install
 | 04 | Abandono de clientes de telefonía        | Clasificación  | ✅ AUC = 0.84 |
 | 05 | Riesgo de accidente cerebrovascular      | Clasificación  | ✅ AUC = 0.84 |
 | 06 | Tipo de hepatitis C                      | Clasificación  | ✅ F1 macro = 0.58 |
-| 07 | Etapa de cirrosis                        | Clasificación  | Pendiente     |
+| 07 | Etapa de cirrosis                        | Clasificación  | ✅ F1 macro = 0.47 |
 | 08 | Porcentaje de grasa corporal             | Regresión      | ✅ R² = 0.56 (CV 0.70) |
 | 09 | Precio del aguacate                      | Regresión      | ✅ R² = 0.42 (temporal) |
 | 10 | Precio de acciones del S&P 500           | Regresión      | Pendiente     |

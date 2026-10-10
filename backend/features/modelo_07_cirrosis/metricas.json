@@ -1,0 +1,257 @@
+{
+  "metricas": {
+    "accuracy": 0.4286,
+    "precision_macro": 0.4536,
+    "recall_macro": 0.5427,
+    "f1_macro": 0.4647,
+    "matriz_confusion": [
+      [
+        2,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        4,
+        6,
+        2
+      ],
+      [
+        2,
+        7,
+        12,
+        2
+      ],
+      [
+        0,
+        3,
+        10,
+        6
+      ]
+    ],
+    "orden_clases": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "mae_etapas": 0.6964,
+    "dentro_de_1_etapa": 0.875,
+    "kappa_cuadratico": 0.3399,
+    "por_clase": {
+      "1": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1-score": 0.667,
+        "support": 2.0
+      },
+      "2": {
+        "precision": 0.286,
+        "recall": 0.333,
+        "f1-score": 0.308,
+        "support": 12.0
+      },
+      "3": {
+        "precision": 0.429,
+        "recall": 0.522,
+        "f1-score": 0.471,
+        "support": 23.0
+      },
+      "4": {
+        "precision": 0.6,
+        "recall": 0.316,
+        "f1-score": 0.414,
+        "support": 19.0
+      }
+    },
+    "ic95": {
+      "f1_macro": [
+        0.251,
+        0.5986
+      ],
+      "dentro_de_1_etapa": [
+        0.7857,
+        0.9464
+      ],
+      "kappa_cuadratico": [
+        0.0454,
+        0.5611
+      ]
+    },
+    "modelo": "random forest",
+    "comparacion_cv": {
+      "clase mayoritaria (línea base)": {
+        "cv_f1_macro": 0.1428,
+        "cv_f1_desv": 0.0028,
+        "cv_balanced_accuracy": 0.25
+      },
+      "regresión logística": {
+        "cv_f1_macro": 0.3978,
+        "cv_f1_desv": 0.0634,
+        "cv_balanced_accuracy": 0.4487
+      },
+      "random forest": {
+        "cv_f1_macro": 0.4596,
+        "cv_f1_desv": 0.0827,
+        "cv_balanced_accuracy": 0.4674
+      },
+      "gradient boosting": {
+        "cv_f1_macro": 0.4241,
+        "cv_f1_desv": 0.0857,
+        "cv_balanced_accuracy": 0.4306
+      }
+    },
+    "baseline": {
+      "accuracy": 0.4107,
+      "precision_macro": 0.1027,
+      "recall_macro": 0.25,
+      "f1_macro": 0.1456,
+      "orden_clases": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "mae_etapas": 0.625,
+      "dentro_de_1_etapa": 0.9643,
+      "kappa_cuadratico": 0.0
+    },
+    "n_entrenamiento": 220,
+    "n_prueba": 56,
+    "casos_por_clase_prueba": {
+      "1": 2,
+      "2": 12,
+      "3": 23,
+      "4": 19
+    },
+    "casos_por_clase_entrenamiento": {
+      "1": 10,
+      "2": 47,
+      "3": 88,
+      "4": 75
+    },
+    "oof_entrenamiento": {
+      "accuracy": 0.5091,
+      "recall_macro": 0.4835,
+      "f1_macro": 0.4841,
+      "mae_etapas": 0.5636,
+      "dentro_de_1_etapa": 0.9273,
+      "kappa_cuadratico": 0.5313,
+      "por_clase": {
+        "1": {
+          "precision": 0.5,
+          "recall": 0.4,
+          "f1-score": 0.444,
+          "support": 10.0
+        },
+        "2": {
+          "precision": 0.37,
+          "recall": 0.426,
+          "f1-score": 0.396,
+          "support": 47.0
+        },
+        "3": {
+          "precision": 0.458,
+          "recall": 0.375,
+          "f1-score": 0.412,
+          "support": 88.0
+        },
+        "4": {
+          "precision": 0.64,
+          "recall": 0.733,
+          "f1-score": 0.683,
+          "support": 75.0
+        }
+      }
+    },
+    "experimento_variables": {
+      "15 (todas las de la consulta inicial)": {
+        "variables": 15,
+        "cv_f1_macro": 0.3978,
+        "cv_f1_desv": 0.0634
+      },
+      "13 (sin colesterol ni triglicéridos)": {
+        "variables": 13,
+        "cv_f1_macro": 0.3756,
+        "cv_f1_desv": 0.0543
+      },
+      "7 básicas (las disponibles en todos los pacientes)": {
+        "variables": 7,
+        "cv_f1_macro": 0.3012,
+        "cv_f1_desv": 0.0699
+      },
+      "15 + N_Days y Status (seguimiento posterior: no existe en la consulta, no se usa)": {
+        "variables": 17,
+        "cv_f1_macro": 0.3951,
+        "cv_f1_desv": 0.0721
+      },
+      "solo N_Days y Status (seguimiento posterior, no se usa)": {
+        "variables": 2,
+        "cv_f1_macro": 0.2278,
+        "cv_f1_desv": 0.0465
+      }
+    },
+    "experimento_pacientes_incompletos": {
+      "regresión logística": {
+        "solo_completos": {
+          "cv_f1_macro": 0.3978,
+          "cv_f1_desv": 0.0634
+        },
+        "con_incompletos_imputados": {
+          "cv_f1_macro": 0.4004,
+          "cv_f1_desv": 0.0643
+        },
+        "pacientes_incompletos": 136
+      },
+      "random forest": {
+        "solo_completos": {
+          "cv_f1_macro": 0.4596,
+          "cv_f1_desv": 0.0827
+        },
+        "con_incompletos_imputados": {
+          "cv_f1_macro": 0.4449,
+          "cv_f1_desv": 0.091
+        },
+        "pacientes_incompletos": 136
+      }
+    },
+    "experimento_sin_cada_variable": {
+      "cv_f1_macro_15_variables": 0.3978,
+      "diferencia_al_quitar": {
+        "age": -0.0255,
+        "bilirubin": 0.0027,
+        "cholesterol": -0.0052,
+        "albumin": -0.0023,
+        "copper": 0.0016,
+        "alk_phos": 0.0083,
+        "sgot": -0.0246,
+        "tryglicerides": -0.0161,
+        "platelets": 0.0043,
+        "prothrombin": 0.0127,
+        "sex": 0.0022,
+        "ascites": -0.0013,
+        "hepatomegaly": -0.0205,
+        "spiders": 0.0018,
+        "edema": 0.0015
+      }
+    }
+  },
+  "entrada_ejemplo": {
+    "age": 32.492813141683776,
+    "bilirubin": 0.5,
+    "cholesterol": 320.0,
+    "albumin": 3.54,
+    "copper": 51.0,
+    "alk_phos": 1243.0,
+    "sgot": 122.45,
+    "tryglicerides": 80.0,
+    "platelets": 225.0,
+    "prothrombin": 10.0,
+    "sex": "F",
+    "ascites": "N",
+    "hepatomegaly": "N",
+    "spiders": "N",
+    "edema": "N"
+  }
+}

@@ -18,13 +18,14 @@ El desarrollo de los modelos se pausó por límite de cuota. **Antes de seguir, 
 | #4 | `feature/modelo-04-churn`         | `feature/modelo-03-vino`          | 04 churn          |
 | #5 | `feature/modelo-05-acv`           | `feature/modelo-04-churn`         | 05 acv            |
 | #6 | `feature/modelo-06-hepatitis`     | `feature/modelo-05-acv`           | 06 hepatitis      |
+| #7 | `feature/modelo-07-cirrosis`      | `feature/modelo-06-hepatitis`     | 07 cirrosis       |
 
-Fusionar en orden #1 → #6; tras cada fusión GitHub redirige el siguiente a `main` (o cambiar la base a mano). Si se
+Fusionar en orden #1 → #7; tras cada fusión GitHub redirige el siguiente a `main` (o cambiar la base a mano). Si se
 piden cambios en un PR intermedio, hay que rebasar las ramas siguientes.
 
 **Pendiente, en este orden:**
-1. **Modelos 07 cirrosis, 01 bitcoin y 10 sp500**, cada uno en su rama `feature/modelo-XX-slug` creada
-   desde la última (`feature/modelo-06-hepatitis`) y con PR apilado. Leer el `SPEC.md` del modelo: trae las trampas ya
+1. **Modelos 01 bitcoin y 10 sp500**, cada uno en su rama `feature/modelo-XX-slug` creada
+   desde la última (`feature/modelo-07-cirrosis`) y con PR apilado. Leer el `SPEC.md` del modelo: trae las trampas ya
    verificadas en los datos. 01 y 10 son series de tiempo: seguir el patrón del 09 (partición y validación por fechas,
    transformador de fechas en módulo propio, reentrenar con todo para servir).
 2. **Re-verificar el 05 y el 06 con un subagente independiente**: tras su última revisión cambiaron (05: se quitó el `bmi`, ganó la
@@ -131,8 +132,8 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
 | 4  | 04 churn           | Binaria, muchas categóricas, `TotalCharges` sucia, formulario de 9 campos elegidos de 18 | ✅ (2026-10-09) |
 | 5  | 05 acv             | 4.9 % de positivos: métricas distintas a accuracy, umbrales, bmi faltante informativo | ✅ (2026-10-09) |
 | 6  | 06 hepatitis       | Multiclase muy desbalanceada, clase de 7 filas | ✅ (2026-10-09) |
-| 7  | 07 cirrosis        | 418 filas, 106 casi vacías, fuga de información, 4 etapas desiguales | ⏳ **siguiente** |
-| 8  | 01 bitcoin         | Serie temporal: fechas, `-`, partición temporal, rezagos, predicción recursiva | ⏳ |
+| 7  | 07 cirrosis        | 418 filas, 106 casi vacías, fuga de información, 4 etapas desiguales | ✅ (2026-10-09) |
+| 8  | 01 bitcoin         | Serie temporal: fechas, `-`, partición temporal, rezagos, predicción recursiva | ⏳ **siguiente** |
 | 9  | 10 sp500           | Serie temporal multi-símbolo; interpretar el símbolo desde la voz | ⏳ |
 
 **Lecciones del modelo 08 que aplican a los demás:**
@@ -163,6 +164,18 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   mediana deja un pico que un árbol aísla y "aprende" el artefacto sin que nadie lo incluya (Random Forest con `bmi`
   imputado: AUC 0.8455; sin `bmi`: 0.8347). Comprobarlo reajustando el modelo **con y sin** la variable; si el aporte
   desaparece, excluir la variable. Los umbrales y el recall con pocos positivos dependen de la semilla: reportar el rango.
+- **Medir antes de afirmar una fuga** (modelo 07): `N_Days`/`Status` son seguimiento posterior y se excluyeron por principio, pero
+  agregarlos no inflaba la métrica (0.395 contra 0.398). Excluir por principio y decir lo medido; no escribir "fuga" sin evidencia.
+- **Métricas ordinales** (etapas): kappa cuadrático, error medio y aciertos a ±1; la línea base "siempre la categoría central" gana en las dos
+  últimas, así que no deben leerse aisladas. Probar siempre la línea base con cada métrica.
+- **Pacientes incompletos**: probar entrenar solo con completos frente a añadir los incompletos imputados en los **mismos pliegues** de completos.
+- **Describir los datos no es medir lo que el modelo usa** (modelo 07): las medianas por etapa mostraban bilirrubina, albúmina y signos
+  "claros", pero al quitar cada variable ninguna aportaba más de 0.026 de F1. Incluir siempre un experimento "quitar cada variable"
+  antes de afirmar qué señales importan.
+- **Documentar la población de cada cifra** (todos los pacientes / solo los completos) y que coincida con la de las figuras; citar el recall
+  por clase **en la prueba, fuera de muestra y con otras particiones** (el de la etapa 4: 0.32, 0.73 y 0.58–0.74) y decir cuál es la publicada.
+- **Probar las unidades y descripciones del formulario** (una prueba por campo): se corrigieron SGOT (U/L) y plaquetas (10³/µL).
+- Probar también `entender()` y `explorar()` (con `capsys` y `tmp_path`): sin pruebas, mutarlas pasa inadvertido.
 - **Artefacto contra señal** (modelos 05 y 06): ante un valor faltante sospechoso, reajustar con (a) la variable quitada, (b) los vacíos
   rellenados **al azar con valores observados** y (c) solo el indicador de faltante. Si el aporte desaparece con (b), es un artefacto
   (el `bmi` del 05); si sobrevive, es señal (el ALP del 06). No concluir por analogía: el 06 lo hizo y la revisión lo corrigió.
@@ -245,7 +258,8 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Modelo 04 churn              | ✅ entrenado (RF, AUC prueba 0.840 / CV 0.845, umbral 0.35); falta interfaz |
 | Modelo 05 acv                | ✅ entrenado (regresión logística, 4 variables sin bmi; AUC prueba 0.840 / CV 0.842, umbrales 0.11 y 0.045); falta interfaz |
 | Modelo 06 hepatitis          | ✅ entrenado (RF, F1 macro prueba 0.580 / CV 0.635, 11 variables con ALP y sin sexo); falta interfaz |
-| Modelos 01, 07, 10           | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
+| Modelo 07 cirrosis           | ✅ entrenado (RF, F1 macro prueba 0.465 / CV 0.460, solo pacientes completos); falta interfaz |
+| Modelos 01, 10               | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |
 | Comandos de voz → modelo     | 🟡 reconoce el modelo; faltan parámetros y el tono según la emoción   |
