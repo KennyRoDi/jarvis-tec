@@ -16,8 +16,9 @@
 
 - **Fuente:** https://www.kaggle.com/rajyellow46/wine-quality (`winequalityN.csv`)
 - **Archivo:** `dataset.csv` en esta carpeta. Si el original es grande, va en `data/` y aquí solo el recorte.
-- Variables esperadas: `type` (red/white) más 11 fisicoquímicas (acidez, azúcar, cloruros, sulfitos, densidad, pH, sulfatos, alcohol).
-- Hay algunos nulos en las variables fisicoquímicas: imputar dentro del `Pipeline`.
+- ✅ Verificado: 6497 filas. Las columnas vienen con espacios (`fixed acidity`, `free sulfur dioxide`…): renombrar a `snake_case` en `train.py`. `quality` = 3:30, 4:216, 5:2138, 6:2836, 7:1079, 8:193, 9:5.
+- Variables: `type` (red/white, 1599/4898) más 11 fisicoquímicas (acidez, azúcar, cloruros, sulfitos, densidad, pH, sulfatos, alcohol).
+- Hay 38 nulos repartidos en 7 columnas (✅ verificado): imputar dentro del `Pipeline`.
 - Las clases extremas son escasas: por eso se agrupan, y la partición debe ser estratificada.
 
 ## Enfoque sugerido

@@ -16,9 +16,9 @@
 
 - **Fuente:** https://www.kaggle.com/camnugent/sandp500 (`all_stocks_5yr.csv`)
 - **Archivo:** `dataset.csv` en esta carpeta. Si el original es grande, va en `data/` y aquí solo el recorte.
-- Columnas esperadas: `date, open, high, low, close, volume, Name`; ≈ 500 símbolos entre 2013 y 2018.
-- El archivo completo pesa ≈ 30 MB: guardarlo en `data/` y dejar en `dataset.csv` solo los símbolos elegidos (p. ej. AAPL, MSFT, AMZN, GOOGL).
-- "Mañana" significa el día siguiente al último registro del dataset (2018).
+- ✅ Verificado: 619040 filas, 505 símbolos, del 2013-02-08 al 2018-02-07; 11 nulos en `open` y 8 en `high`/`low`.
+- El archivo completo pesa ≈ 30 MB: el completo está en `data/all_stocks_5yr.csv` (fuera de git; se regenera con `bash data/descargar_datasets.sh`) y `dataset.csv` ya contiene el recorte de AAPL, MSFT, AMZN y GOOGL (5036 filas, 1259 por símbolo).
+- "Mañana" significa el día siguiente al último registro del dataset (7-feb-2018).
 
 ## Enfoque sugerido
 

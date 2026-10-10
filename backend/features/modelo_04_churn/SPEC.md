@@ -16,7 +16,7 @@
 
 - **Fuente:** https://github.com/IBM/telco-customer-churn-on-icp4d ✅ ya descargado
 - **Archivo:** `dataset.csv` en esta carpeta. Si el original es grande, va en `data/` y aquí solo el recorte.
-- 7043 filas. Se descarta `customerID`.
+- ✅ Verificado: 7043 filas, `Churn` = Yes en 26.5 %. Se descarta `customerID`.
 - `TotalCharges` es texto y tiene cadenas vacías (clientes con `tenure` = 0): convertir a número e imputar.
 - La mayoría de las columnas son categóricas (Yes/No, tipo de contrato, método de pago).
 

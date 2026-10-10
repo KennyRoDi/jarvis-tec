@@ -16,7 +16,8 @@
 
 - **Fuente:** https://www.kaggle.com/neuromusic/avocado-prices (`avocado.csv`)
 - **Archivo:** `dataset.csv` en esta carpeta. Si el original es grande, va en `data/` y aquí solo el recorte.
-- Columnas esperadas: `Date, AveragePrice, Total Volume, 4046, 4225, 4770, Total Bags, …, type, year, region`.
+- ✅ Verificado: 18249 filas, sin nulos, 54 regiones (incluye `TotalUS`), fechas 2015-01-04 a 2018-03-25. Hay una columna `Unnamed: 0` (índice): descartarla.
+- Columnas: `Date, AveragePrice, Total Volume, 4046, 4225, 4770, Total Bags, …, type, year, region`.
 - `region` mezcla ciudades con agregados (`TotalUS`, `West`, …): decidir y justificar si se usan.
 - Los volúmenes son del mismo día que el precio y el usuario no los conoce de antemano: preferir `type`, `region`, año, mes y semana.
 

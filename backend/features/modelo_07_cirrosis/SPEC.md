@@ -16,8 +16,8 @@
 
 - **Fuente:** https://www.kaggle.com/fedesoriano/cirrhosis-prediction-dataset (`cirrhosis.csv`). Proviene del ensayo de la Clínica Mayo sobre cirrosis biliar primaria
 - **Archivo:** `dataset.csv` en esta carpeta. Si el original es grande, va en `data/` y aquí solo el recorte.
-- ≈ 418 pacientes; ≈ 106 no participaron en el ensayo y tienen muchas columnas vacías. `Stage` también tiene nulos: descartar esas filas.
-- `Age` viene en días: convertir a años.
+- ✅ Verificado: 418 pacientes (`Stage` 1:21, 2:92, 3:155, 4:144, 6 nulos); 106 no participaron en el ensayo y tienen muchas columnas vacías. `Stage` también tiene nulos: descartar esas filas.
+- `Age` viene en días (9598–28650): convertir a años. `Edema` toma `Y`/`N`/`S`; `Status` toma `C`/`D`/`CL`.
 - `N_Days` y `Status` describen el seguimiento posterior, no el estado del paciente al consultar: **excluirlos** para evitar fuga de información.
 
 ## Enfoque sugerido

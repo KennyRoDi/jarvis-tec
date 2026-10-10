@@ -16,9 +16,9 @@
 
 - **Fuente:** https://www.kaggle.com/fedesoriano/body-fat-prediction-dataset (`bodyfat.csv`). ⚠️ En el enunciado este enlace está intercambiado con el de hepatitis
 - **Archivo:** `dataset.csv` en esta carpeta. Si el original es grande, va en `data/` y aquí solo el recorte.
-- 252 hombres. Variables: `Density, BodyFat, Age`, `Weight` (lb), `Height` (in) y 10 circunferencias en cm.
+- ✅ Verificado: 252 filas, sin nulos, correlación `Density`–`BodyFat` = −0.988 (confirma la fuga). Variables: `Density, BodyFat, Age`, `Weight` (lb), `Height` (in) y 10 circunferencias en cm.
 - ⚠️ **Excluir `Density`**: `BodyFat` se calcula a partir de ella (ecuación de Siri). Incluirla es fuga de información y daría un R² casi perfecto que no vale nada.
-- Hay valores atípicos (p. ej. grasa de 0 % o una estatura imposible): revisarlos en la exploración.
+- Hay valores atípicos (✅ verificado: `BodyFat` = 0 %, `Height` mínima 29.5 in, `Weight` máximo 363 lb): revisarlos en la exploración.
 
 ## Enfoque sugerido
 

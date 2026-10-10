@@ -80,7 +80,7 @@ _Actualizar al cerrar cada tarea._
 | Cámara/micrófono en la ventana | ✅ Linux (`core/escritorio.py`, verificado) · ⏳ Windows sin verificar |
 | Registro automático features | ✅                                                                     |
 | Modelo 02 autos              | ✅ entrenado (R² 0.962)                                                |
-| Modelos 01, 03–10            | ⏳ plantillas con TODO; faltan datasets de Kaggle                      |
+| Modelos 01, 03–10            | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido: Azure detecta el rostro, Google Vision da la emoción |
 | Comandos de voz → modelo     | 🟡 reconoce el modelo; faltan parámetros y el tono según la emoción   |

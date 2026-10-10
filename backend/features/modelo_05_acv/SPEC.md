@@ -16,8 +16,9 @@
 
 - **Fuente:** https://www.kaggle.com/fedesoriano/stroke-prediction-dataset (`healthcare-dataset-stroke-data.csv`)
 - **Archivo:** `dataset.csv` en esta carpeta. Si el original es grande, va en `data/` y aquí solo el recorte.
-- Columnas esperadas: `id, gender, age, hypertension, heart_disease, ever_married, work_type, Residence_type, avg_glucose_level, bmi, smoking_status, stroke`.
-- `bmi` trae `N/A` como texto; `gender` tiene una sola fila `Other`. Descartar `id`.
+- ✅ Verificado: 5110 filas, 249 positivos (4.9 %), 201 nulos reales en `bmi` (ya viene como número, no como texto `N/A`), 1 fila con `gender = Other`.
+- Columnas: `id, gender, age, hypertension, heart_disease, ever_married, work_type, Residence_type, avg_glucose_level, bmi, smoking_status, stroke`.
+- Descartar `id`.
 
 ## Enfoque sugerido
 

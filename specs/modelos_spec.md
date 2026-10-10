@@ -30,7 +30,7 @@ Cada modelo vive en `backend/features/modelo_XX_<slug>/` con estos archivos:
 
 | #  | Carpeta                       | `slug`            | Tipo                     | Variable objetivo          | Fuente del dataset |
 |----|-------------------------------|-------------------|--------------------------|----------------------------|--------------------|
-| 01 | `modelo_01_bitcoin`           | `bitcoin`         | Regresión (serie temporal) | `Close` del día siguiente | [Kaggle team-ai/bitcoin-price-prediction](https://www.kaggle.com/team-ai/bitcoin-price-prediction/version/1) (`bitcoin_price_Training - bitcoin_price.2013Apr-2017Aug.csv`) |
+| 01 | `modelo_01_bitcoin`           | `bitcoin`         | Regresión (serie temporal) | `Close` del día siguiente | [Kaggle team-ai/bitcoin-price-prediction](https://www.kaggle.com/team-ai/bitcoin-price-prediction/version/1) (`bitcoin_price_Training - Training.csv`) |
 | 02 | `modelo_02_autos`             | `autos`           | Regresión                | `Selling_Price`            | [GitHub amankharwal/car data.csv](https://raw.githubusercontent.com/amankharwal/Website-data/master/car%20data.csv) ✅ descargado |
 | 03 | `modelo_03_vino`              | `vino`            | Clasificación            | `quality` (agrupada)       | [Kaggle rajyellow46/wine-quality](https://www.kaggle.com/rajyellow46/wine-quality) |
 | 04 | `modelo_04_churn`             | `churn`           | Clasificación binaria    | `Churn`                    | [GitHub IBM Telco-Customer-Churn.csv](https://github.com/IBM/telco-customer-churn-on-icp4d/blob/master/data/Telco-Customer-Churn.csv) ✅ descargado |

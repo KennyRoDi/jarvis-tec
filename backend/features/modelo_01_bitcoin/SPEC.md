@@ -14,12 +14,12 @@
 
 ## Datos
 
-- **Fuente:** https://www.kaggle.com/team-ai/bitcoin-price-prediction/version/1 (archivo `bitcoin_price_Training - bitcoin_price.2013Apr-2017Aug.csv`)
+- **Fuente:** https://www.kaggle.com/team-ai/bitcoin-price-prediction/version/1 (archivo `bitcoin_price_Training - Training.csv`; el `Test` de Kaggle solo trae 1 semana y no se usa)
 - **Archivo:** `dataset.csv` en esta carpeta. Si el original es grande, va en `data/` y aquí solo el recorte.
-- Columnas esperadas: `Date, Open, High, Low, Close, Volume, Market Cap` (verificar al descargar).
-- Las filas vienen de la más reciente a la más antigua: ordenar por fecha ascendente.
-- `Volume` y `Market Cap` traen separadores de miles y `-` como faltante: limpiar antes de convertir a número.
-- El dataset termina en agosto de 2017: "mañana" significa el día siguiente al último registro, y la respuesta debe decirlo.
+- ✅ Verificado: 1556 filas, `Date, Open, High, Low, Close, Volume, Market Cap`; fechas como `Jul 31, 2017` (formato `%b %d, %Y`), del 28-abr-2013 al 31-jul-2017.
+- ✅ Las filas vienen de la más reciente a la más antigua: ordenar por fecha ascendente.
+- `Volume` y `Market Cap` traen separadores de miles y `-` como faltante (243 filas de `Volume`, ✅ verificado): limpiar antes de convertir a número.
+- El dataset termina el 31 de julio de 2017: "mañana" significa el día siguiente al último registro, y la respuesta debe decirlo.
 
 ## Enfoque sugerido
 

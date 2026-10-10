@@ -16,9 +16,10 @@
 
 - **Fuente:** https://www.kaggle.com/fedesoriano/hepatitis-c-dataset (`HepatitisCdata.csv`). ⚠️ En el enunciado este enlace está intercambiado con el de grasa corporal
 - **Archivo:** `dataset.csv` en esta carpeta. Si el original es grande, va en `data/` y aquí solo el recorte.
-- Variables esperadas: `Age, Sex` y análisis de laboratorio `ALB, ALP, ALT, AST, BIL, CHE, CHOL, CREA, GGT, PROT`.
-- Valores de `Category`: `0=Blood Donor`, `0s=suspect Blood Donor`, `1=Hepatitis`, `2=Fibrosis`, `3=Cirrhosis`. Decidir y justificar qué hacer con `0s`.
-- Hay nulos en varias columnas de laboratorio. Las clases están muy desbalanceadas (mayoría de donantes).
+- ✅ Verificado: 615 filas. Hay una columna `Unnamed: 0` (índice): descartarla. Valores de `Category`: `0=Blood Donor` 533, `3=Cirrhosis` 30, `1=Hepatitis` 24, `2=Fibrosis` 21, `0s=suspect Blood Donor` 7.
+- Variables: `Age, Sex` y análisis de laboratorio `ALB, ALP, ALT, AST, BIL, CHE, CHOL, CREA, GGT, PROT`.
+- Decidir y justificar qué hacer con la clase `0s=suspect Blood Donor` (solo 7 filas).
+- Hay 31 nulos en 5 columnas de laboratorio (`ALP` 18, `CHOL` 10). Las clases están muy desbalanceadas (87 % donantes).
 
 ## Enfoque sugerido
 

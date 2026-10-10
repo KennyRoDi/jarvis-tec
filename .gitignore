@@ -17,3 +17,7 @@ frontend/dist/
 .vscode/
 .idea/
 .DS_Store
+
+# Datos crudos grandes (se regeneran con data/descargar_datasets.sh)
+data/*.csv
+data/*.zip

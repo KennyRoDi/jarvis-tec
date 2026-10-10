@@ -75,6 +75,7 @@ cd frontend && npm install
 | Build para escritorio      | `cd frontend && npm run build`                                |
 | Entrenar un modelo         | `cd backend && python -m features.modelo_02_autos.train`      |
 | Pruebas                    | `cd backend && pytest`                                        |
+| Regenerar datasets (Kaggle) | `pip install kaggle && bash data/descargar_datasets.sh`      |
 
 ## Modelos de Machine Learning
 
