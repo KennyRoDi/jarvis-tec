@@ -56,6 +56,12 @@ def cargar_datos(quitar_duplicados: bool = True) -> pd.DataFrame:
     return df
 
 
+def dividir(df: pd.DataFrame):
+    """Partición 80/20 **estratificada**: conserva la proporción de las tres clases en entrenamiento y prueba."""
+    X, y = df[VARIABLES], df[OBJETIVO]
+    return train_test_split(X, y, test_size=0.2, stratify=y, random_state=SEMILLA)
+
+
 def entender(df: pd.DataFrame, n_crudo: int) -> None:
     """2. Entendimiento de los datos."""
     print(f"Filas crudas: {n_crudo}  Filas sin duplicados: {len(df)} ({n_crudo - len(df)} duplicadas descartadas)")
@@ -115,10 +121,8 @@ def candidatos() -> dict[str, Pipeline]:
 def evaluar(pipeline: Pipeline, X_test, y_test, figuras: Path) -> dict:
     """5. Evaluación sobre el conjunto de prueba."""
     y_pred = pipeline.predict(X_test)
-    metricas = metricas_clasificacion(y_test, y_pred)
-    metricas["orden_clases"] = ORDEN
+    metricas = metricas_clasificacion(y_test, y_pred, orden=ORDEN)  # matriz: filas = real, columnas = predicho
     matriz = confusion_matrix(y_test, y_pred, labels=ORDEN)
-    metricas["matriz_confusion"] = matriz.tolist()  # filas = real, columnas = predicho, en el orden de ORDEN
     metricas["por_clase"] = {c: {k: round(float(v), 3) for k, v in d.items()}
                              for c, d in classification_report(y_test, y_pred, labels=ORDEN, output_dict=True, zero_division=0).items()
                              if c in ORDEN}
@@ -137,8 +141,7 @@ def main() -> None:
     entender(df, len(crudo))
     explorar(df, figuras)
 
-    X, y = df[VARIABLES], df[OBJETIVO]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=SEMILLA)
+    X_train, X_test, y_train, y_test = dividir(df)
 
     # La selección usa solo el entrenamiento (validación cruzada estratificada repetida); la prueba, una vez.
     validacion = RepeatedStratifiedKFold(n_splits=5, n_repeats=2, random_state=SEMILLA)
@@ -167,10 +170,17 @@ def main() -> None:
     Xc_tr, Xc_te, yc_tr, yc_te = train_test_split(Xc, yc, test_size=0.2, stratify=yc, random_state=SEMILLA)
     inflado = clone(candidatos()[ganador]).fit(Xc_tr, yc_tr)
     met_inf = metricas_clasificacion(yc_te, inflado.predict(Xc_te))
-    metricas["experimento_duplicados"] = {"accuracy_con_duplicados": met_inf["accuracy"], "f1_macro_con_duplicados": met_inf["f1_macro"],
-                                          "filas_duplicadas": int(len(crudo) - len(df))}
+    copias = Xc_te.merge(Xc_tr.drop_duplicates(), on=VARIABLES, how="left", indicator=True)["_merge"].eq("both")
+    metricas["experimento_duplicados"] = {
+        "accuracy_con_duplicados": met_inf["accuracy"], "f1_macro_con_duplicados": met_inf["f1_macro"],
+        "filas_duplicadas": int(len(crudo) - len(df)), "n_prueba_con_duplicados": len(Xc_te),
+        "prueba_con_copia_en_entrenamiento": int(copias.sum()),
+    }
 
-    guardar_modelo(CARPETA, pipeline, metricas, entrada_ejemplo=X_test.iloc[[0]].to_dict("records")[0], variables=VARIABLES)
+    # Rango visto en entrenamiento: la API avisa cuando una medida lo excede (core.modelos.fuera_de_rango).
+    rango = {c: [float(X_train[c].min()), float(X_train[c].max())] for c in NUMERICAS}
+    guardar_modelo(CARPETA, pipeline, metricas, entrada_ejemplo=X_test.iloc[[0]].to_dict("records")[0],
+                   variables=VARIABLES, rango=rango)
     print("\nMétricas:", {k: v for k, v in metricas.items() if k not in ("comparacion_cv", "matriz_confusion", "por_clase")})
     print("Por clase:", metricas["por_clase"])
     # 6. Conclusión: ver analisis.md

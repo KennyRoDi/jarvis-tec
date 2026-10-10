@@ -7,9 +7,9 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
-from core.modelos import RespuestaPrediccion, predecir_con_pipeline
+from core.modelos import RespuestaPrediccion, fuera_de_rango, predecir_con_pipeline
 
 CARPETA = Path(__file__).parent
 
@@ -41,14 +41,24 @@ class Entrada(BaseModel):
     sulphates: float = Field(ge=0.2, le=2.1, description="Sulfatos (g/dm³, sulfato de potasio)", examples=[0.5])
     alcohol: float = Field(ge=7.5, le=15.5, description="Grado alcohólico (% vol.)", examples=[10.5])
 
+    @model_validator(mode="after")
+    def azufre_libre_no_supera_al_total(self):
+        """El dióxido de azufre libre es una parte del total (en el dataset nunca lo supera)."""
+        if self.free_sulfur_dioxide > self.total_sulfur_dioxide:
+            raise ValueError("free_sulfur_dioxide no puede ser mayor que total_sulfur_dioxide")
+        return self
+
 
 @router.post("/predecir", response_model=RespuestaPrediccion)
 def predecir(entrada: Entrada) -> RespuestaPrediccion:
-    clase, probabilidades = predecir_con_pipeline(CARPETA, MODELO_INFO["slug"], entrada.model_dump())
+    datos = entrada.model_dump()
+    clase, probabilidades = predecir_con_pipeline(CARPETA, MODELO_INFO["slug"], datos)
     porcentajes = ", ".join(f"{c} {round(probabilidades[c] * 100)} %" for c in ORDEN)
     tipo = "tinto" if entrada.tipo == "red" else "blanco"
     texto = (f"Según sus propiedades fisicoquímicas, este vino {tipo} se clasifica como de calidad {clase}, "
              f"con una probabilidad del {round(probabilidades[clase] * 100)} por ciento. Probabilidades: {porcentajes}.")
     if probabilidades[clase] < UMBRAL_POCO_CONCLUYENTE:
         texto += " La clasificación es poco concluyente: ninguna clase supera el 50 por ciento."
+    if fuera_de_rango(CARPETA, MODELO_INFO["slug"], datos):
+        texto += " Atención: alguna medida está fuera del rango de los vinos con que se entrenó el modelo y el resultado es poco confiable."
     return RespuestaPrediccion(modelo=MODELO_INFO["slug"], prediccion=clase, probabilidades=probabilidades, texto=texto)

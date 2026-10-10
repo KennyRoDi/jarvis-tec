@@ -85,7 +85,9 @@
     "experimento_duplicados": {
       "accuracy_con_duplicados": 0.6954,
       "f1_macro_con_duplicados": 0.6935,
-      "filas_duplicadas": 1168
+      "filas_duplicadas": 1168,
+      "n_prueba_con_duplicados": 1300,
+      "prueba_con_copia_en_entrenamiento": 356
     }
   },
   "entrada_ejemplo": {
