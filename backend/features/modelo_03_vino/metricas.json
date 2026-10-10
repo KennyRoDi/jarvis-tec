@@ -1,0 +1,105 @@
+{
+  "metricas": {
+    "accuracy": 0.5938,
+    "precision_macro": 0.5826,
+    "recall_macro": 0.6065,
+    "f1_macro": 0.5912,
+    "matriz_confusion": [
+      [
+        279,
+        105,
+        14
+      ],
+      [
+        134,
+        226,
+        106
+      ],
+      [
+        10,
+        64,
+        128
+      ]
+    ],
+    "orden_clases": [
+      "baja",
+      "media",
+      "alta"
+    ],
+    "por_clase": {
+      "baja": {
+        "precision": 0.66,
+        "recall": 0.701,
+        "f1-score": 0.68,
+        "support": 398.0
+      },
+      "media": {
+        "precision": 0.572,
+        "recall": 0.485,
+        "f1-score": 0.525,
+        "support": 466.0
+      },
+      "alta": {
+        "precision": 0.516,
+        "recall": 0.634,
+        "f1-score": 0.569,
+        "support": 202.0
+      }
+    },
+    "modelo": "random forest",
+    "comparacion_cv": {
+      "mayoritaria (línea base)": {
+        "cv_f1_macro": 0.203,
+        "cv_f1_desv": 0.0,
+        "cv_accuracy": 0.437
+      },
+      "regresión logística": {
+        "cv_f1_macro": 0.554,
+        "cv_f1_desv": 0.012,
+        "cv_accuracy": 0.559
+      },
+      "svm rbf": {
+        "cv_f1_macro": 0.567,
+        "cv_f1_desv": 0.019,
+        "cv_accuracy": 0.572
+      },
+      "random forest": {
+        "cv_f1_macro": 0.595,
+        "cv_f1_desv": 0.012,
+        "cv_accuracy": 0.602
+      },
+      "gradient boosting": {
+        "cv_f1_macro": 0.586,
+        "cv_f1_desv": 0.016,
+        "cv_accuracy": 0.598
+      }
+    },
+    "baseline": {
+      "accuracy": 0.4371,
+      "precision_macro": 0.1457,
+      "recall_macro": 0.3333,
+      "f1_macro": 0.2028
+    },
+    "n_entrenamiento": 4263,
+    "n_prueba": 1066,
+    "experimento_duplicados": {
+      "accuracy_con_duplicados": 0.6954,
+      "f1_macro_con_duplicados": 0.6935,
+      "filas_duplicadas": 1168
+    }
+  },
+  "entrada_ejemplo": {
+    "fixed_acidity": 6.9,
+    "volatile_acidity": 0.5,
+    "citric_acid": 0.04,
+    "residual_sugar": 1.5,
+    "chlorides": 0.085,
+    "free_sulfur_dioxide": 19.0,
+    "total_sulfur_dioxide": 49.0,
+    "density": 0.9958,
+    "ph": 3.35,
+    "sulphates": 0.78,
+    "alcohol": 9.5,
+    "tipo": "red"
+  }
+}
