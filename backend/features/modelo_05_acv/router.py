@@ -1,7 +1,8 @@
 """Modelo 05 · Riesgo de accidente cerebrovascular (ACV).
 
 Contrato: specs/api_rest_spec.md §3 · Entrada y criterios: SPEC.md de esta carpeta.
-`prediccion` es "Yes" si la probabilidad alcanza el umbral F1 del artefacto (riesgo alto). El texto añade un nivel
+`prediccion` es "Yes" si la probabilidad alcanza el umbral F1 del artefacto (riesgo alto). La comparación usa la
+probabilidad redondeada a 4 decimales, que es la que se muestra en la respuesta. El texto añade un nivel
 intermedio ("moderado") con el umbral de sensibilidad. NO es un diagnóstico: es una estimación estadística.
 """
 from pathlib import Path
@@ -35,7 +36,6 @@ class Entrada(BaseModel):
     hypertension: Literal["Yes", "No"] = Field(description="Hipertensión diagnosticada")
     heart_disease: Literal["Yes", "No"] = Field(description="Enfermedad cardíaca diagnosticada")
     avg_glucose_level: float = Field(ge=40, le=400, description="Nivel promedio de glucosa en sangre (mg/dL)", examples=[105.0])
-    bmi: float = Field(ge=10, le=100, description="Índice de masa corporal (kg/m²)", examples=[28.5])
 
 
 @router.post("/predecir", response_model=RespuestaPrediccion)

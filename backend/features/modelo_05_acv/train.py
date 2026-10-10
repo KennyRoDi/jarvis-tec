@@ -30,9 +30,10 @@ from core.entrenamiento import (carpeta_figuras, guardar_figura, guardar_modelo,
 CARPETA = Path(__file__).parent
 OBJETIVO = "acv"
 POSITIVO, ORDEN = "Yes", ["No", "Yes"]  # se predice la probabilidad de tener un ACV ("Yes")
-NUMERICAS = ["age", "avg_glucose_level", "bmi"]
+NUMERICAS = ["age", "avg_glucose_level"]
 CATEGORICAS = ["hypertension", "heart_disease"]
-VARIABLES = NUMERICAS + CATEGORICAS  # 5 variables clínicas: ver el experimento `experimento_variables`
+# 4 variables clínicas. El `bmi` se excluye: su único aporte medible es un artefacto (ver `experimento_variables`).
+VARIABLES = NUMERICAS + CATEGORICAS
 RECALL_OBJETIVO = 0.8  # umbral de sensibilidad del tamizaje
 SEMILLA = 42
 REJILLA_F1 = np.round(np.arange(0.01, 0.951, 0.01), 2)  # la clase es rara: el óptimo puede estar por debajo de 0.05
@@ -46,9 +47,10 @@ TODAS = ["gender", "age", "hypertension", "heart_disease", "ever_married", "work
 CONJUNTOS = {
     "10 (todas)": TODAS,
     "9 (sin género)": [c for c in TODAS if c != "gender"],
-    "5 (las elegidas)": VARIABLES,
+    "5 (las 4 elegidas + bmi imputado)": VARIABLES + ["bmi"],
+    "4 (las elegidas, sin bmi)": VARIABLES,
     "1 (solo la edad)": ["age"],
-    "5 + indicador de bmi faltante (artefacto, no se usa)": VARIABLES + ["bmi_faltante"],
+    "4 + indicador de bmi faltante (artefacto, no se usa)": VARIABLES + ["bmi_faltante"],
 }
 
 # 1. Análisis del problema: estimar la probabilidad de que un paciente sufra un ACV a partir de datos clínicos básicos.
@@ -106,7 +108,7 @@ def explorar(df: pd.DataFrame, figuras: Path) -> None:
 def armar(estimador, variables: list[str] | None = None, escalar: bool = True) -> Pipeline:
     """4. Modelo: imputación (mediana) + escala de las numéricas, one-hot de las categóricas y estimador, en un Pipeline."""
     variables = VARIABLES if variables is None else variables
-    numericas = [v for v in variables if v in ("age", "avg_glucose_level", "bmi", "bmi_faltante")]
+    numericas = [v for v in variables if v in ("age", "avg_glucose_level", "bmi", "bmi_faltante")]  # bmi solo en experimentos
     categoricas = [v for v in variables if v not in numericas]
     columnas = ColumnTransformer([
         ("num", Pipeline([("imputar", SimpleImputer(strategy="median"))] + ([("escala", StandardScaler())] if escalar else [])), numericas),
@@ -244,6 +246,16 @@ def entrenar(df: pd.DataFrame, figuras: Path | None = None, imprimir: bool = Tru
         experimento[nombre] = {"variables": len(cols), "cv_roc_auc": round(float(auc.mean()), 4), "cv_roc_auc_desv": round(float(auc.std()), 4)}
         log(f"  {nombre:52s} AUC cv = {auc.mean():.4f} ± {auc.std():.4f}")
     metricas["experimento_variables"] = experimento
+
+    # Por qué se excluye el bmi: con la imputación por la mediana el Random Forest aísla el pico del valor imputado y
+    # "descubre" que el bmi faltante predice el ACV (un artefacto de la recolección que la aplicación no puede dar).
+    bosque = candidatos()["random forest"].named_steps["modelo"]
+    experimento_bmi = {}
+    for nombre, cols in {"random forest sin bmi (elegido)": VARIABLES, "random forest con bmi imputado por la mediana": VARIABLES + ["bmi"]}.items():
+        auc = cross_val_score(armar(RandomForestClassifier(**bosque.get_params()), cols, escalar=False), train[cols], y_train, cv=validacion, **CV)
+        experimento_bmi[nombre] = {"cv_roc_auc": round(float(auc.mean()), 4), "cv_roc_auc_desv": round(float(auc.std()), 4)}
+        log(f"  {nombre:52s} AUC cv = {auc.mean():.4f} ± {auc.std():.4f}")
+    metricas["experimento_bmi_random_forest"] = experimento_bmi
 
     return {
         "pipeline": pipeline, "metricas": metricas, "umbral": umbral, "umbral_sensibilidad": umbral_sensibilidad,

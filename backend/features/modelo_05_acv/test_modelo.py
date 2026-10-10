@@ -13,8 +13,8 @@ from features.modelo_05_acv.train import (CATEGORICAS, NUMERICAS, OBJETIVO, POSI
                                           dividir, entrenar, estadisticas_al_umbral, REJILLA_F1)
 
 URL = "/api/modelos/acv/predecir"
-ENTRADA = {"age": 67.0, "hypertension": "Yes", "heart_disease": "No", "avg_glucose_level": 105.0, "bmi": 28.5}
-JOVEN = {"age": 25.0, "hypertension": "No", "heart_disease": "No", "avg_glucose_level": 85.0, "bmi": 22.0}
+ENTRADA = {"age": 67.0, "hypertension": "Yes", "heart_disease": "No", "avg_glucose_level": 105.0}
+JOVEN = {"age": 25.0, "hypertension": "No", "heart_disease": "No", "avg_glucose_level": 85.0}
 entrenado = pytest.mark.skipif(not REGISTRO["acv"].entrenado, reason="ejecutar features.modelo_05_acv.train")
 
 
@@ -35,7 +35,7 @@ def p_lote(filas: list[dict]) -> np.ndarray:
 
 
 def filas_reales(n=600, semilla=0):
-    return cargar_datos().dropna(subset=["bmi"]).sample(n, random_state=semilla)[VARIABLES].to_dict("records")
+    return cargar_datos().sample(n, random_state=semilla)[VARIABLES].to_dict("records")
 
 
 # --- Preparación de datos (no requiere el modelo entrenado) ---
@@ -46,9 +46,10 @@ def test_los_datos_cargados():
     assert df.bmi.isna().sum() == 201 and set(df.hypertension) == {"Yes", "No"}
 
 
-def test_las_variables_son_las_5_clinicas_sin_datos_sensibles_ni_proxies():
-    assert VARIABLES == ["age", "avg_glucose_level", "bmi", "hypertension", "heart_disease"]
-    for excluida in ("gender", "ever_married", "work_type", "residence_type", "smoking_status", "bmi_faltante", OBJETIVO, "id"):
+def test_las_variables_son_las_4_clinicas_sin_bmi_ni_datos_sensibles_ni_proxies():
+    """El bmi se excluye: su único aporte medible era un artefacto (el bmi faltante imputado con la mediana)."""
+    assert VARIABLES == ["age", "avg_glucose_level", "hypertension", "heart_disease"]
+    for excluida in ("bmi", "gender", "ever_married", "work_type", "residence_type", "smoking_status", "bmi_faltante", OBJETIVO, "id"):
         assert excluida not in VARIABLES
 
 
@@ -87,7 +88,7 @@ def test_la_rejilla_del_umbral_f1_llega_por_debajo_de_0_05_porque_la_clase_es_ra
 
 # --- Validación de la entrada (no requiere el modelo entrenado) ---
 
-def test_la_entrada_acepta_a_todos_los_pacientes_reales_con_bmi():
+def test_la_entrada_acepta_a_todos_los_pacientes_reales():
     for fila in filas_reales(n=4000):
         Entrada(**fila)
 
@@ -97,20 +98,21 @@ def test_los_limites_de_entrada_son_razonables_frente_a_los_datos():
     propiedades = Entrada.model_json_schema()["properties"]
     for campo in NUMERICAS:
         minimo, maximo = df[campo].min(), df[campo].max()
-        assert propiedades[campo]["minimum"] <= minimo and (propiedades[campo]["minimum"] == 0 or propiedades[campo]["minimum"] >= 0.4 * minimo), campo
+        inferior = 0 if minimo < 1 else 0.4 * minimo  # la edad llega a 0.08 años: solo ahí se admite 0
+        assert inferior <= propiedades[campo]["minimum"] <= minimo, campo
         assert maximo <= propiedades[campo]["maximum"] <= 1.8 * maximo, campo
 
 
 @pytest.mark.parametrize("cambio", [
-    {"age": -1}, {"age": 150}, {"bmi": 5}, {"avg_glucose_level": 1000}, {"hypertension": "Quizá"}, {"age": "67"}, {"age": True},
-    {"hypertension": 1}, {"gender": "Female"}, {"smoking_status": "never smoked"},   # variables que el modelo no usa
+    {"age": -1}, {"age": 150}, {"bmi": 25.0}, {"avg_glucose_level": 1000}, {"hypertension": "Quizá"}, {"age": "67"}, {"age": True},
+    {"hypertension": 1}, {"gender": "Female"}, {"smoking_status": "never smoked"},   # variables que el modelo no usa (bmi incluido)
 ])
 def test_entradas_invalidas_dan_422(cliente, assert_error, cambio):
     assert_error(cliente.post(URL, json={**ENTRADA, **cambio}), 422, "VALIDACION")
 
 
 def test_faltan_campos_da_422_y_todos_son_obligatorios(cliente, assert_error):
-    assert_error(cliente.post(URL, json={k: v for k, v in ENTRADA.items() if k != "bmi"}), 422, "VALIDACION")
+    assert_error(cliente.post(URL, json={k: v for k, v in ENTRADA.items() if k != "age"}), 422, "VALIDACION")
     esquema = Entrada.model_json_schema()
     assert set(esquema["required"]) == set(ENTRADA) and esquema.get("additionalProperties") is False
 
@@ -135,8 +137,12 @@ def test_el_modelo_guardado_reproduce_las_metricas_publicadas():
 def test_las_probabilidades_estan_calibradas():
     m = leer_metricas(CARPETA)["metricas"]
     assert m["brier"] < m["brier_tasa_base"]
-    for tramo in m["calibracion"]:
-        assert abs(tramo["prob_media"] - tramo["tasa_real"]) < 0.04, tramo
+    tramos = m["calibracion"]
+    for tramo in tramos:
+        assert abs(tramo["prob_media"] - tramo["tasa_real"]) < 0.03, tramo   # con p <= 0.17 por tramo, 0.03 ya es "muy mal"
+    media_predicha = np.mean([t["prob_media"] for t in tramos])
+    media_real = np.mean([t["tasa_real"] for t in tramos])
+    assert media_predicha == pytest.approx(media_real, rel=0.25), "calibración global (O/E)"
 
 
 @entrenado
@@ -172,7 +178,7 @@ def test_los_tres_niveles_de_riesgo_cambian_exactamente_en_los_umbrales_guardado
     """Se prueban las filas reales más cercanas a cada borde: bajo | umbral de sensibilidad | moderado | umbral F1 | alto."""
     a = cargar_artefacto(CARPETA, "acv")
     filas = filas_reales(4000)
-    p = p_lote(filas)
+    p = np.round(p_lote(filas), 4)  # la API compara con la probabilidad redondeada a 4 decimales (la que muestra)
     s, u = a["umbral_sensibilidad"], a["umbral"]
     borde = {  # fila real con la probabilidad más cercana al borde, por cada lado
         ("bajo", "No"): int(np.argmax(np.where(p < s, p, -1))),
@@ -203,14 +209,35 @@ def test_medidas_fuera_de_rango_avisan_que_el_resultado_es_poco_confiable(client
     assert "poco confiable" in cliente.post(URL, json={**ENTRADA, "age": 110.0}).json()["texto"]
     assert "poco confiable" in cliente.post(URL, json={**ENTRADA, "avg_glucose_level": 395.0}).json()["texto"]
     rango = cargar_artefacto(CARPETA, "acv")["rango"]
-    # El rango de entrenamiento del bmi (10.3-97.6) cubre los límites de Entrada (10-100) dentro del margen del 5 %:
-    # ningún bmi válido dispara el aviso (el aviso sí funciona para edad y glucosa, arriba).
-    margen = (rango["bmi"][1] - rango["bmi"][0]) * 0.05
-    assert rango["bmi"][0] - margen <= 10 and 100 <= rango["bmi"][1] + margen
     train, _, _, _ = dividir(cargar_datos())
     assert set(rango) == set(NUMERICAS)
     for campo, (minimo, maximo) in rango.items():
         assert (minimo, maximo) == (train[campo].min(), train[campo].max()), campo
+
+
+@entrenado
+def test_las_clases_y_niveles_cambian_exactamente_en_el_valor_del_umbral(cliente, monkeypatch):
+    """Una probabilidad IGUAL al umbral cuenta como del nivel superior (`>=`); un poco por debajo, no."""
+    import features.modelo_05_acv.router as router
+    a = cargar_artefacto(CARPETA, "acv")
+
+    def con_p(p):
+        monkeypatch.setattr(router, "predecir_con_pipeline", lambda *args, **kw: ("x", {"Yes": p, "No": round(1 - p, 4)}))
+        return cliente.post(URL, json=ENTRADA).json()
+
+    for p, clase, nivel in [(a["umbral"], "Yes", "alto"), (round(a["umbral"] - 0.0001, 4), "No", "moderado"),
+                            (a["umbral_sensibilidad"], "No", "moderado"), (round(a["umbral_sensibilidad"] - 0.0001, 4), "No", "bajo")]:
+        cuerpo = con_p(p)
+        assert cuerpo["prediccion"] == clase and f"riesgo {nivel}" in cuerpo["texto"], (p, nivel)
+
+
+@entrenado
+def test_el_bmi_no_entra_al_modelo_y_su_aporte_era_un_artefacto():
+    """Con la mediana como imputación el Random Forest aislaba el pico del bmi imputado (el bmi faltante predice el ACV)."""
+    pipeline = cargar_artefacto(CARPETA, "acv")["pipeline"]
+    assert list(pipeline.feature_names_in_) == VARIABLES and "bmi" not in pipeline.feature_names_in_
+    e = leer_metricas(CARPETA)["metricas"]["experimento_bmi_random_forest"]
+    assert e["random forest con bmi imputado por la mediana"]["cv_roc_auc"] - e["random forest sin bmi (elegido)"]["cv_roc_auc"] > 0.005
 
 
 @pytest.mark.reproduce
@@ -233,7 +260,7 @@ def test_info_incluye_metricas_esquema_y_ejemplo_valido(cliente):
     cuerpo = cliente.get("/api/modelos/acv/info").json()
     assert {"roc_auc", "pr_auc", "brier", "umbral", "umbral_sensibilidad", "ic95", "recall_yes"} <= set(cuerpo["metricas"])
     assert set(ENTRADA) == set(cuerpo["esquema_entrada"]["properties"]) == set(cuerpo["entrada_ejemplo"])
-    assert cliente.post(URL, json=cuerpo["entrada_ejemplo"]).status_code == 200
+    assert isinstance(cuerpo["entrada_ejemplo"]["age"], float) and cliente.post(URL, json=cuerpo["entrada_ejemplo"]).status_code == 200
 
 
 @entrenado
