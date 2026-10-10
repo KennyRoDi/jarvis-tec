@@ -79,6 +79,17 @@ def predecir_con_pipeline(carpeta: Path, slug: str, entrada: dict) -> tuple[obje
     return prediccion, probabilidades
 
 
+def fuera_de_rango(carpeta: Path, slug: str, entrada: dict, margen: float = 0.05) -> list[str]:
+    """Campos de `entrada` fuera del rango visto en el entrenamiento (más un `margen` del ancho del rango).
+
+    Requiere que el artefacto guarde `rango={campo: [mínimo, máximo]}` (ver `guardar_modelo(..., rango=...)`).
+    Los modelos extrapolan mal fuera de lo que vieron: el router usa esto para avisar que el resultado es poco confiable.
+    """
+    rango = cargar_artefacto(carpeta, slug).get("rango", {})
+    return [campo for campo, (minimo, maximo) in rango.items()
+            if not minimo - (maximo - minimo) * margen <= entrada[campo] <= maximo + (maximo - minimo) * margen]
+
+
 def leer_metricas(carpeta: Path) -> dict | None:
     ruta = carpeta / METRICAS
     return json.loads(ruta.read_text(encoding="utf-8")) if ruta.exists() else None
