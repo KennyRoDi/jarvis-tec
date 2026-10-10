@@ -4,6 +4,47 @@ Asistente personal de escritorio estilo "Jarvis" (Proyecto IA, I Semestre 2026, 
 Este archivo es la memoria persistente de los agentes: si cambias una convención, comando o el estado
 del proyecto, actualízalo aquí en el mismo commit.
 
+## ▶ Reanudar el trabajo (estado al 2026-10-10)
+
+El desarrollo de los modelos se pausó por límite de cuota. **Antes de seguir, leer este apartado y el de "Orden de desarrollo".**
+
+**Estado de los PR** (apilados; ninguno está fusionado, el usuario aún no los ha aprobado; **no fusionar ni subir a `main` sin que lo pida**):
+
+| PR | Rama                              | Base                              | Modelo            |
+|----|-----------------------------------|-----------------------------------|-------------------|
+| #1 | `feature/modelo-08-grasa-corporal`| `main`                            | 08 grasa corporal |
+| #2 | `feature/modelo-09-aguacate`      | `feature/modelo-08-grasa-corporal`| 09 aguacate       |
+| #3 | `feature/modelo-03-vino`          | `feature/modelo-09-aguacate`      | 03 vino           |
+| #4 | `feature/modelo-04-churn`         | `feature/modelo-03-vino`          | 04 churn          |
+| #5 | `feature/modelo-05-acv`           | `feature/modelo-04-churn`         | 05 acv            |
+
+Fusionar en orden #1 → #5; tras cada fusión GitHub redirige el siguiente a `main` (o cambiar la base a mano). Si se
+piden cambios en un PR intermedio, hay que rebasar las ramas siguientes.
+
+**Pendiente, en este orden:**
+1. **Modelos 06 hepatitis, 07 cirrosis, 01 bitcoin y 10 sp500**, cada uno en su rama `feature/modelo-XX-slug` creada
+   desde la última (`feature/modelo-05-acv`) y con PR apilado. Leer el `SPEC.md` del modelo: trae las trampas ya
+   verificadas en los datos. 01 y 10 son series de tiempo: seguir el patrón del 09 (partición y validación por fechas,
+   transformador de fechas en módulo propio, reentrenar con todo para servir).
+2. **Re-verificar el 05 con un subagente independiente**: tras la última revisión se quitó el `bmi`, ganó la regresión
+   logística y cambiaron los umbrales (0.11 y 0.045); esos cambios solo se comprobaron con pruebas y mutaciones propias.
+3. **PR de seguimiento** que lleve a los modelos 08, 09 y 03 lo aprendido después: `entrenar()` pura + prueba
+   `reproduce`, `Entrada` estricta, `core.fuera_de_rango` (el 08 tiene copia local) y control de mutaciones.
+4. Interfaz (Dev B), voz y visión, y documento LaTeX siguen sin empezar; ver `specs/alcance_spec.md`.
+
+**Procedimiento por modelo** (el que se siguió en 08–05):
+1. Explorar los datos: duplicados, nulos, fuga de información, si faltan valores que predicen el objetivo.
+2. Si el formulario sería largo, experimento de cuántas variables hacen falta (guardarlo en `metricas.json`).
+3. `train.py` con `entrenar()` pura (sin escribir en disco); `router.py` con `Entrada` estricta y avisos.
+4. Pruebas: datos, entrada, modelo, la de `reproduce` y control de mutaciones (`herramientas/mutar.py`).
+5. `analisis.md` con las 6 etapas y referencias **verificadas por búsqueda web**; añadirlas a `docs_latex/referencias.bib`.
+6. `python3 herramientas/cerrar_modelo.py ...` (ver `herramientas/README.md`) y revisar el `git diff`.
+7. Commits separados (core / modelo / docs), subagente verificador **de solo lectura** (darle la lista de mutaciones ya
+   probadas para que busque otras), corregir sus hallazgos, PR apilado con la verificación descrita.
+
+**Entorno:** `cd backend && ../venv/bin/pytest -q` (≈ 45 s; con `-m "not reproduce"` es mucho más rápido, pero **no excluir
+`reproduce` en CI**). No hay Colab conectado: los modelos son pequeños y entrenan en segundos localmente.
+
 ## Arquitectura
 
 ```
@@ -86,8 +127,8 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
 | 2  | 09 aguacate        | Sin nulos, pero 54 regiones, fechas y valores por defecto para usarlo con la voz | ✅ (2026-10-09) |
 | 3  | 03 vino            | Multiclase: agrupar `quality`, imputar 38 nulos, estratificar | ✅ (2026-10-09) |
 | 4  | 04 churn           | Binaria, muchas categóricas, `TotalCharges` sucia, formulario de 9 campos elegidos de 18 | ✅ (2026-10-09) |
-| 5  | 05 acv             | 4.9 % de positivos: métricas distintas a accuracy, pesos de clase, umbral | ⏳ **siguiente** |
-| 6  | 06 hepatitis       | Multiclase muy desbalanceada, clase de 7 filas | ⏳ |
+| 5  | 05 acv             | 4.9 % de positivos: métricas distintas a accuracy, umbrales, bmi faltante informativo | ✅ (2026-10-09) |
+| 6  | 06 hepatitis       | Multiclase muy desbalanceada, clase de 7 filas | ⏳ **siguiente** |
 | 7  | 07 cirrosis        | 418 filas, 106 casi vacías, fuga de información, 4 etapas desiguales | ⏳ |
 | 8  | 01 bitcoin         | Serie temporal: fechas, `-`, partición temporal, rezagos, predicción recursiva | ⏳ |
 | 9  | 10 sp500           | Serie temporal multi-símbolo; interpretar el símbolo desde la voz | ⏳ |
@@ -116,6 +157,10 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   confusión con las clases en su orden natural y `texto` que avise cuando ninguna clase supera el 50 %.
 - **Tamaño del artefacto**: el `.joblib` se versiona en git; mantenerlo < 5 MB (con una prueba que lo vigile) y
   documentar el compromiso entre tamaño y rendimiento cuando se reduzca un ensamble.
+- **Imputación + árboles = fuga silenciosa** (modelo 05): si el valor faltante predice el objetivo, imputar con la
+  mediana deja un pico que un árbol aísla y "aprende" el artefacto sin que nadie lo incluya (Random Forest con `bmi`
+  imputado: AUC 0.8455; sin `bmi`: 0.8347). Comprobarlo reajustando el modelo **con y sin** la variable; si el aporte
+  desaparece, excluir la variable. Los umbrales y el recall con pocos positivos dependen de la semilla: reportar el rango.
 - **`entrenar()` pura + prueba `reproduce`**: separar el entrenamiento (selección, umbral, evaluación) de la escritura
   en disco, y añadir una prueba marcada `@pytest.mark.reproduce` que lo reejecute en memoria y exija igualdad
   exacta con `metricas.json`, el umbral, el rango y las probabilidades del artefacto. Es lo que atrapa fugas y
@@ -139,6 +184,15 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   entrenamiento, guardarlo en el artefacto (`umbral=`) y usarlo en el router (no el 0.5 por defecto).
 - Reducir variables con evidencia: comparar AUC/F1 de validación cruzada con 18 / 9 / 6 / 3 variables y guardar el
   experimento en `metricas.json`; un formulario corto vale la pena si la pérdida es menor que la desviación.
+- **Pocos positivos en la prueba** (<100): acompañar las métricas con intervalos bootstrap
+  (`core.entrenamiento.intervalo_bootstrap`) y ofrecer un umbral de sensibilidad (`umbral_para_recall`) además del de
+  F1; con el umbral 0.5 la exactitud puede igualar la de predecir siempre "No" (ACV: 95.1 %) sin detectar a nadie.
+- **Datos faltantes**: comprobar si el valor faltante predice el objetivo (en ACV, `bmi` nulo: 19.9 % contra 4.3 %); si es
+  un artefacto de la recolección, imputar en el `Pipeline` y no usar un indicador que la aplicación no puede dar.
+- **Higiene de pruebas**: nunca `assert ... or True` ni aserciones que no puedan fallar; si un valor válido no puede
+  disparar una rama (p. ej. el aviso de rango del `bmi`), dejar esa imposibilidad como prueba explícita. Probar los
+  umbrales en sus **bordes** con las filas reales más cercanas a cada lado (un umbral de 0.07 en lugar de 0.06 no se
+  detecta con filas lejanas). Los mutantes equivalentes (mismo comportamiento con los datos) se declaran, no se fuerzan.
 - Comprobar si el dataset es real o de ejemplo (el de churn es una muestra ficticia de IBM) y decirlo en las limitaciones.
 - Cada modelo se entrega en su rama `feature/modelo-XX-slug` con PR; un subagente lo verifica de forma
   independiente (pruebas, fuga de información, métricas reproducibles, contrato, coherencia de documentos).
@@ -180,7 +234,8 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Modelo 09 aguacate           | ✅ entrenado (GB, R² prueba 0.418 temporal / CV 0.509); falta interfaz |
 | Modelo 03 vino               | ✅ entrenado (RF, F1 macro prueba 0.591 / CV 0.595); falta interfaz |
 | Modelo 04 churn              | ✅ entrenado (RF, AUC prueba 0.840 / CV 0.845, umbral 0.35); falta interfaz |
-| Modelos 01, 05–07, 10        | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
+| Modelo 05 acv                | ✅ entrenado (regresión logística, 4 variables sin bmi; AUC prueba 0.840 / CV 0.842, umbrales 0.11 y 0.045); falta interfaz |
+| Modelos 01, 06–07, 10        | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |
 | Comandos de voz → modelo     | 🟡 reconoce el modelo; faltan parámetros y el tono según la emoción   |

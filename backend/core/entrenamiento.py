@@ -58,6 +58,36 @@ def umbral_optimo_f1(y_real, probabilidad, rejilla=None) -> float:
     return round(float(rejilla[int(np.argmax(puntajes))]), 2)
 
 
+def umbral_para_recall(y_real, probabilidad, objetivo: float = 0.8, rejilla=None) -> float:
+    """Mayor umbral con el que el recall de la clase positiva (`y_real` con 1 = positivo) alcanza `objetivo`.
+
+    Sirve para un tamizaje en el que importa no dejar casos sin detectar. Como `umbral_optimo_f1`, debe calcularse
+    con probabilidades fuera de muestra. Si ningún umbral alcanza el objetivo devuelve el más bajo de la rejilla.
+    """
+    y = np.asarray(y_real).astype(bool)
+    p = np.asarray(probabilidad)
+    rejilla = np.round(np.arange(0.005, 0.951, 0.005), 3) if rejilla is None else rejilla
+    for umbral in sorted(rejilla, reverse=True):
+        if (p[y] >= umbral).mean() >= objetivo:
+            return round(float(umbral), 3)
+    return round(float(min(rejilla)), 3)
+
+
+def intervalo_bootstrap(y_real, probabilidad, funcion, remuestreos: int = 1000, semilla: int = 42) -> list[float]:
+    """Intervalo de confianza del 95 % (percentiles 2.5 y 97.5) de `funcion(y, p)` por remuestreo con reemplazo.
+
+    Con pocos positivos en la prueba las métricas son muy ruidosas: esto cuantifica cuánto.
+    """
+    y, p = np.asarray(y_real), np.asarray(probabilidad)
+    rng = np.random.default_rng(semilla)
+    valores = []
+    while len(valores) < remuestreos:
+        i = rng.integers(0, len(y), len(y))
+        if len(np.unique(y[i])) > 1:  # hace falta más de una clase (al menos un positivo y un negativo)
+            valores.append(funcion(y[i], p[i]))
+    return [round(float(np.percentile(valores, 2.5)), 4), round(float(np.percentile(valores, 97.5)), 4)]
+
+
 def guardar_modelo(carpeta: Path, pipeline, metricas: dict, entrada_ejemplo: dict, **extra) -> None:
     """Guarda modelo.joblib (lo usa el router) y metricas.json (lo usa /info y analisis.md)."""
     entrada_ejemplo = {k: (v.item() if isinstance(v, np.generic) else v) for k, v in entrada_ejemplo.items()}

@@ -5,7 +5,7 @@ import joblib
 import numpy as np
 import pytest
 
-from core.entrenamiento import metricas_clasificacion, umbral_optimo_f1
+from core.entrenamiento import intervalo_bootstrap, metricas_clasificacion, umbral_optimo_f1, umbral_para_recall
 from core.modelos import cargar_artefacto, fuera_de_rango
 
 
@@ -67,3 +67,43 @@ def test_el_cache_del_artefacto_se_invalida_cuando_cambia_el_archivo(tmp_path):
     joblib.dump({"version": 2}, ruta)
     os.utime(ruta, (ruta.stat().st_atime, ruta.stat().st_mtime + 10))
     assert cargar_artefacto(tmp_path, "m")["version"] == 2
+
+
+def test_umbral_para_recall_devuelve_el_mayor_umbral_que_alcanza_el_objetivo():
+    y = np.array([1, 1, 1, 1, 0, 0, 0, 0])
+    p = np.array([0.9, 0.7, 0.5, 0.3, 0.6, 0.2, 0.1, 0.05])
+    assert umbral_para_recall(y, p, 0.5) == 0.7      # 2 de 4 positivos con p >= 0.7
+    assert umbral_para_recall(y, p, 0.75) == 0.5     # 3 de 4 con p >= 0.5
+    assert umbral_para_recall(y, p, 1.0) == 0.3      # los 4 solo con p >= 0.3
+
+
+def test_umbral_para_recall_sin_positivos_alcanzables_devuelve_el_minimo():
+    assert umbral_para_recall([1, 1], [0.0, 0.0], 0.9, rejilla=[0.1, 0.2, 0.3]) == 0.1
+
+
+def test_intervalo_bootstrap_contiene_el_valor_y_se_ensancha_con_pocos_datos():
+    from sklearn.metrics import roc_auc_score
+    rng = np.random.default_rng(1)
+    def datos(n):
+        y = (rng.random(n) < 0.3).astype(int)
+        return y, np.clip(0.5 * y + rng.normal(0.3, 0.2, n), 0, 1)
+    y1, p1 = datos(2000)
+    y2, p2 = datos(60)
+    ic_grande, ic_pequeno = intervalo_bootstrap(y1, p1, roc_auc_score), intervalo_bootstrap(y2, p2, roc_auc_score)
+    assert ic_grande[0] < roc_auc_score(y1, p1) < ic_grande[1]
+    assert (ic_pequeno[1] - ic_pequeno[0]) > 3 * (ic_grande[1] - ic_grande[0])
+    assert intervalo_bootstrap(y1, p1, roc_auc_score) == ic_grande, "determinista con la misma semilla"
+
+
+def test_intervalo_bootstrap_usa_percentiles_2_5_y_97_5_y_remuestras_del_tamano_original():
+    """Para la media, el IC del 95 % mide ~3.92 errores estándar (con 5/95 serían 3.29, con remuestras menores, más)."""
+    y = (np.random.default_rng(3).random(400) < 0.3).astype(int)
+    ic = intervalo_bootstrap(y, np.zeros(400), lambda yy, pp: float(yy.mean()))
+    assert (ic[1] - ic[0]) == pytest.approx(3.92 * y.std() / np.sqrt(400), rel=0.12)
+
+
+def test_intervalo_bootstrap_descarta_las_remuestras_de_una_sola_clase():
+    """Con un único positivo, muchas remuestras no lo contienen: sin el descarte, roc_auc_score lanzaría ValueError."""
+    from sklearn.metrics import roc_auc_score
+    ic = intervalo_bootstrap(np.array([1] + [0] * 7), np.linspace(0.1, 0.9, 8), roc_auc_score, remuestreos=200)
+    assert 0 <= ic[0] <= ic[1] <= 1

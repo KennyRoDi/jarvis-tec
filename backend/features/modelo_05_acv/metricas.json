@@ -1,0 +1,193 @@
+{
+  "metricas": {
+    "roc_auc": 0.8402,
+    "pr_auc": 0.2623,
+    "pr_auc_azar": 0.0489,
+    "brier": 0.0409,
+    "brier_tasa_base": 0.0465,
+    "orden_clases": [
+      "No",
+      "Yes"
+    ],
+    "umbral": 0.11,
+    "accuracy": 0.8611,
+    "precision_yes": 0.2051,
+    "recall_yes": 0.64,
+    "f1_yes": 0.3107,
+    "precision_macro": 0.5922,
+    "recall_macro": 0.7562,
+    "f1_macro": 0.6167,
+    "matriz_confusion": [
+      [
+        848,
+        124
+      ],
+      [
+        18,
+        32
+      ]
+    ],
+    "al_umbral_de_sensibilidad": {
+      "umbral": 0.045,
+      "accuracy": 0.725,
+      "precision_yes": 0.131,
+      "recall_yes": 0.82,
+      "f1_yes": 0.2259,
+      "precision_macro": 0.5591,
+      "recall_macro": 0.7701,
+      "f1_macro": 0.5294,
+      "matriz_confusion": [
+        [
+          700,
+          272
+        ],
+        [
+          9,
+          41
+        ]
+      ]
+    },
+    "en_umbral_0_5": {
+      "umbral": 0.5,
+      "accuracy": 0.9511,
+      "precision_yes": 0.0,
+      "recall_yes": 0.0,
+      "f1_yes": 0.0,
+      "precision_macro": 0.4755,
+      "recall_macro": 0.5,
+      "f1_macro": 0.4875,
+      "matriz_confusion": [
+        [
+          972,
+          0
+        ],
+        [
+          50,
+          0
+        ]
+      ]
+    },
+    "ic95": {
+      "roc_auc": [
+        0.7798,
+        0.8952
+      ],
+      "pr_auc": [
+        0.1737,
+        0.3701
+      ],
+      "recall_yes": [
+        0.5,
+        0.7692
+      ],
+      "recall_yes_al_umbral_de_sensibilidad": [
+        0.7083,
+        0.9259
+      ]
+    },
+    "calibracion": [
+      {
+        "prob_media": 0.002,
+        "tasa_real": 0.005
+      },
+      {
+        "prob_media": 0.006,
+        "tasa_real": 0.005
+      },
+      {
+        "prob_media": 0.018,
+        "tasa_real": 0.029
+      },
+      {
+        "prob_media": 0.049,
+        "tasa_real": 0.02
+      },
+      {
+        "prob_media": 0.169,
+        "tasa_real": 0.185
+      }
+    ],
+    "modelo": "regresión logística",
+    "umbral_sensibilidad": 0.045,
+    "recall_objetivo": 0.8,
+    "comparacion_cv": {
+      "tasa base (línea base)": {
+        "cv_roc_auc": 0.5,
+        "cv_roc_auc_desv": 0.0,
+        "cv_pr_auc": 0.0487
+      },
+      "regresión logística": {
+        "cv_roc_auc": 0.8421,
+        "cv_roc_auc_desv": 0.0202,
+        "cv_pr_auc": 0.1887
+      },
+      "random forest": {
+        "cv_roc_auc": 0.8347,
+        "cv_roc_auc_desv": 0.0194,
+        "cv_pr_auc": 0.1731
+      },
+      "gradient boosting": {
+        "cv_roc_auc": 0.8295,
+        "cv_roc_auc_desv": 0.0204,
+        "cv_pr_auc": 0.1686
+      }
+    },
+    "baseline": {
+      "roc_auc": 0.5,
+      "accuracy": 0.9511,
+      "recall_yes": 0.0
+    },
+    "n_entrenamiento": 4088,
+    "n_prueba": 1022,
+    "positivos_entrenamiento": 199,
+    "positivos_prueba": 50,
+    "experimento_variables": {
+      "10 (todas)": {
+        "variables": 10,
+        "cv_roc_auc": 0.8374,
+        "cv_roc_auc_desv": 0.0193
+      },
+      "9 (sin género)": {
+        "variables": 9,
+        "cv_roc_auc": 0.8384,
+        "cv_roc_auc_desv": 0.0187
+      },
+      "5 (las 4 elegidas + bmi imputado)": {
+        "variables": 5,
+        "cv_roc_auc": 0.8418,
+        "cv_roc_auc_desv": 0.02
+      },
+      "4 (las elegidas, sin bmi)": {
+        "variables": 4,
+        "cv_roc_auc": 0.8421,
+        "cv_roc_auc_desv": 0.0202
+      },
+      "1 (solo la edad)": {
+        "variables": 1,
+        "cv_roc_auc": 0.8341,
+        "cv_roc_auc_desv": 0.0217
+      },
+      "4 + indicador de bmi faltante (artefacto, no se usa)": {
+        "variables": 5,
+        "cv_roc_auc": 0.855,
+        "cv_roc_auc_desv": 0.0186
+      }
+    },
+    "experimento_bmi_random_forest": {
+      "random forest sin bmi (elegido)": {
+        "cv_roc_auc": 0.8347,
+        "cv_roc_auc_desv": 0.0194
+      },
+      "random forest con bmi imputado por la mediana": {
+        "cv_roc_auc": 0.8455,
+        "cv_roc_auc_desv": 0.0185
+      }
+    }
+  },
+  "entrada_ejemplo": {
+    "age": 63.0,
+    "avg_glucose_level": 78.23,
+    "hypertension": "No",
+    "heart_disease": "No"
+  }
+}
