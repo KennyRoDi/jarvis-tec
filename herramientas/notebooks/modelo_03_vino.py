@@ -175,7 +175,9 @@ for nombre, pipe in candidatos().items():
 comparacion = pd.DataFrame(filas).T.round(3)
 comparacion""")
 c.md("""Random Forest y Gradient Boosting casi no se distinguen (la diferencia es menor que la variación entre pliegues). La regresión logística y la SVM quedan por detrás. La SVM no se optimizó (se usó C = 3 fijo), así que su resultado puede mejorar.""")
-c.code("""ganador = comparacion.drop("mayoritaria (línea base)")["F1 macro cv"].idxmax()
+c.code("""# Solo pueden elegirse candidatos que calculan probabilidades (la API las devuelve): la SVM sin probability no es elegible.
+elegibles = [n for n, pipe in candidatos().items() if "línea base" not in n and hasattr(pipe, "predict_proba")]
+ganador = comparacion.loc[elegibles, "F1 macro cv"].idxmax()
 print("Modelo elegido:", ganador)
 modelo = candidatos()[ganador].fit(X_train, y_train)""")
 

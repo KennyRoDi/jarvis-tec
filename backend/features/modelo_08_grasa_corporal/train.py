@@ -45,10 +45,11 @@ def cargar_datos() -> pd.DataFrame:
                               ["neck", "chest", "abdomen", "hip", "thigh", "knee", "ankle", "biceps", "forearm", "wrist"]})
 
 
-def limpiar(df: pd.DataFrame) -> pd.DataFrame:
+def limpiar(df: pd.DataFrame, imprimir: bool = True) -> pd.DataFrame:
     """Descarta solo los registros físicamente imposibles (ver analisis.md, etapa 3)."""
     imposibles = (df[OBJETIVO] <= 0) | (df["height_cm"] < 120)  # grasa 0 % y estatura de 75 cm
-    print(f"Registros imposibles descartados: {int(imposibles.sum())} -> filas {df.index[imposibles].tolist()}")
+    if imprimir:
+        print(f"Registros imposibles descartados: {int(imposibles.sum())} -> filas {df.index[imposibles].tolist()}")
     return df[~imposibles].reset_index(drop=True)
 
 
@@ -73,7 +74,7 @@ def explorar(df: pd.DataFrame, figuras: Path) -> None:
     plt.title("Correlación entre variables")
     guardar_figura(figuras, "correlacion")
 
-    sns.regplot(data=df, x="abdomen_cm", y=OBJETIVO, scatter_kws={"alpha": 0.6})
+    sns.regplot(data=df, x="abdomen_cm", y=OBJETIVO, scatter_kws={"alpha": 0.6}, seed=SEMILLA)  # semilla: el IC es por bootstrap
     plt.title("Circunferencia abdominal vs. grasa corporal")
     guardar_figura(figuras, "abdomen_vs_grasa")
 
@@ -95,9 +96,11 @@ def candidatos() -> dict:
     }
 
 
-def evaluar(pipeline: Pipeline, X_test, y_test, figuras: Path) -> dict:
+def evaluar(pipeline: Pipeline, X_test, y_test, figuras: Path | None = None) -> dict:
     """5. Evaluación sobre el conjunto de prueba."""
     y_pred = pipeline.predict(X_test)
+    if figuras is None:  # sin efectos en disco (pruebas)
+        return metricas_regresion(y_test, y_pred)
     plt.scatter(y_test, y_pred, alpha=0.7)
     limite = max(y_test.max(), y_pred.max())
     plt.plot([0, limite], [0, limite], "r--")
@@ -108,12 +111,10 @@ def evaluar(pipeline: Pipeline, X_test, y_test, figuras: Path) -> dict:
     return metricas_regresion(y_test, y_pred)
 
 
-def main() -> None:
-    figuras = carpeta_figuras(CARPETA)
-    df = limpiar(cargar_datos())
-    entender(df)
-    explorar(df, figuras)
-
+def entrenar(df: pd.DataFrame, figuras: Path | None = None, imprimir: bool = True) -> dict:
+    """Etapas 4 y 5 completas, **sin escribir nada en disco** si `figuras` es None: las pruebas lo reentrenan y
+    exigen reproducir exactamente lo publicado (metricas.json y el artefacto)."""
+    log = print if imprimir else (lambda *a, **k: None)
     X, y = df[VARIABLES], df[OBJETIVO]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=SEMILLA)
 
@@ -126,10 +127,10 @@ def main() -> None:
         r2 = cross_val_score(pipe, X_train, y_train, cv=validacion, scoring="r2")
         comparacion[nombre] = {"cv_rmse": round(float(rmse.mean()), 3), "cv_rmse_desv": round(float(rmse.std()), 3),
                                "cv_r2": round(float(r2.mean()), 3)}
-        print(f"{nombre:20s} RMSE cv = {rmse.mean():.3f} ± {rmse.std():.3f}   R² cv = {r2.mean():.3f}")
+        log(f"{nombre:20s} RMSE cv = {rmse.mean():.3f} ± {rmse.std():.3f}   R² cv = {r2.mean():.3f}")
 
     ganador = min((n for n in comparacion if "línea base" not in n), key=lambda n: comparacion[n]["cv_rmse"])
-    print(f"\nModelo elegido: {ganador}")
+    log(f"\nModelo elegido: {ganador}")
     pipeline = candidatos()[ganador].fit(X_train, y_train)
 
     metricas = evaluar(pipeline, X_test, y_test, figuras)
@@ -144,10 +145,22 @@ def main() -> None:
     fuga = candidatos()["regresión lineal"].fit(Xd_train, y_train)
     metricas["r2_con_density_fuga"] = metricas_regresion(y_test, fuga.predict(Xd_test))["r2"]
 
-    # Rango visto en entrenamiento: los modelos lineales extrapolan mal fuera de él (ver analisis.md) y el router avisa.
-    rango = {c: [float(X_train[c].min()), float(X_train[c].max())] for c in VARIABLES}
-    guardar_modelo(CARPETA, pipeline, metricas, entrada_ejemplo=X_test.iloc[[0]].to_dict("records")[0], variables=VARIABLES, rango=rango)
-    print("\nMétricas:", {k: v for k, v in metricas.items() if k != "comparacion_cv"})
+    return {
+        "pipeline": pipeline, "metricas": metricas,
+        # Rango visto en entrenamiento: los modelos lineales extrapolan mal fuera de él (ver analisis.md) y el router avisa.
+        "rango": {c: [float(X_train[c].min()), float(X_train[c].max())] for c in VARIABLES},
+        "entrada_ejemplo": X_test.iloc[[0]].to_dict("records")[0],
+    }
+
+
+def main() -> None:
+    figuras = carpeta_figuras(CARPETA)
+    df = limpiar(cargar_datos())
+    entender(df)
+    explorar(df, figuras)
+    r = entrenar(df, figuras)
+    guardar_modelo(CARPETA, r["pipeline"], r["metricas"], entrada_ejemplo=r["entrada_ejemplo"], variables=VARIABLES, rango=r["rango"])
+    print("\nMétricas:", {k: v for k, v in r["metricas"].items() if k != "comparacion_cv"})
     # 6. Conclusión: ver analisis.md
 
 

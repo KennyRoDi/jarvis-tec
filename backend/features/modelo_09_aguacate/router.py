@@ -10,7 +10,7 @@ from typing import Literal
 
 import pandas as pd
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from core.modelos import RespuestaPrediccion, cargar_artefacto, predecir_con_pipeline
 
@@ -43,10 +43,24 @@ DIAS_DE_GRACIA = 60  # pasada esta holgura desde el último dato, se avisa que e
 
 
 class Entrada(BaseModel):
+    # Estricta: rechaza campos desconocidos y tipos laxos (una fecha como número, "frito" como tipo).
+    model_config = ConfigDict(extra="forbid", strict=True)
+
     region: Literal[REGIONES] = Field("TotalUS", description="Región de EE. UU. (TotalUS = todo el país)")
     tipo: Literal["conventional", "organic"] = Field("conventional", description="Convencional u orgánico")
-    fecha: date = Field(default_factory=date.today, ge=date(2015, 1, 1), le=date(2100, 12, 31),
-                        description="Fecha de la estimación (por defecto, hoy)")
+    fecha: date = Field(default_factory=date.today, ge=date(2015, 1, 1), le=date(2100, 12, 31), strict=False,
+                        description="Fecha de la estimación, AAAA-MM-DD (por defecto, hoy)")
+
+    @field_validator("fecha", mode="before")
+    @classmethod
+    def solo_fecha_iso(cls, valor):
+        """Con `strict=True` pydantic rechazaría hasta "2017-09-15"; con el modo laxo aceptaría un entero (marca de tiempo) o una
+        hora. Se admite únicamente una cadena AAAA-MM-DD (o un objeto `date`, para uso interno)."""
+        if isinstance(valor, str) and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", valor):
+            raise ValueError("la fecha debe tener el formato AAAA-MM-DD")
+        if not isinstance(valor, (str, date)):
+            raise ValueError("la fecha debe ser una cadena AAAA-MM-DD")
+        return valor
 
 
 def nombre_region(region: str) -> str:

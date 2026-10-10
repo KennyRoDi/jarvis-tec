@@ -125,9 +125,11 @@ def cv_por_semanas(df_train: pd.DataFrame, n_splits: int = 3) -> list[tuple[np.n
     return pliegues
 
 
-def evaluar(pipeline: Pipeline, test: pd.DataFrame, figuras: Path) -> dict:
+def evaluar(pipeline: Pipeline, test: pd.DataFrame, figuras: Path | None = None) -> dict:
     """5. Evaluación sobre las últimas semanas (futuro respecto del entrenamiento)."""
     y_pred = pipeline.predict(test[VARIABLES])
+    if figuras is None:  # sin efectos en disco (pruebas)
+        return metricas_regresion(test[OBJETIVO], y_pred)
     plt.scatter(test[OBJETIVO], y_pred, alpha=0.3, s=10)
     limite = max(test[OBJETIVO].max(), y_pred.max())
     plt.plot([0, limite], [0, limite], "r--")
@@ -149,13 +151,12 @@ def evaluar(pipeline: Pipeline, test: pd.DataFrame, figuras: Path) -> dict:
     return metricas_regresion(test[OBJETIVO], y_pred)
 
 
-def main() -> None:
-    figuras = carpeta_figuras(CARPETA)
-    df = cargar_datos()
-    entender(df)
+def entrenar(df: pd.DataFrame, figuras: Path | None = None, imprimir: bool = True) -> dict:
+    """Etapas 4 y 5 completas, **sin escribir nada en disco** si `figuras` es None: las pruebas lo reentrenan y
+    exigen reproducir exactamente lo publicado (metricas.json y el artefacto)."""
+    log = print if imprimir else (lambda *a, **k: None)
     train, test, corte = particion_temporal(df)
-    explorar(df, figuras, corte)
-    print(f"\nEntrenamiento: {len(train)} filas hasta {train.fecha.max().date()} | prueba: {len(test)} filas desde {corte.date()}")
+    log(f"\nEntrenamiento: {len(train)} filas hasta {train.fecha.max().date()} | prueba: {len(test)} filas desde {corte.date()}")
 
     # La selección usa solo el entrenamiento (validación cruzada con ventana creciente por semanas).
     pliegues = cv_por_semanas(train)
@@ -165,10 +166,10 @@ def main() -> None:
         r2 = cross_val_score(pipe, train[VARIABLES], train[OBJETIVO], cv=pliegues, scoring="r2")
         comparacion[nombre] = {"cv_rmse": round(float(rmse.mean()), 3), "cv_rmse_desv": round(float(rmse.std()), 3),
                                "cv_r2": round(float(r2.mean()), 3)}
-        print(f"{nombre:36s} RMSE cv = {rmse.mean():.3f} ± {rmse.std():.3f}   R² cv = {r2.mean():.3f}")
+        log(f"{nombre:36s} RMSE cv = {rmse.mean():.3f} ± {rmse.std():.3f}   R² cv = {r2.mean():.3f}")
 
     ganador = min((n for n in comparacion if "línea base" not in n), key=lambda n: comparacion[n]["cv_rmse"])
-    print(f"\nModelo elegido: {ganador}")
+    log(f"\nModelo elegido: {ganador}")
     pipeline = candidatos()[ganador].fit(train[VARIABLES], train[OBJETIVO])
 
     metricas = evaluar(pipeline, test, figuras)
@@ -178,13 +179,23 @@ def main() -> None:
     metricas["baseline"] = metricas_regresion(test[OBJETIVO], base.predict(test[VARIABLES]))
     metricas["n_entrenamiento"], metricas["n_prueba"] = len(train), len(test)
 
-    # Despliegue: las métricas son las de la partición temporal, pero el modelo que sirve la API se reentrena
-    # con TODAS las semanas para que conozca los precios más recientes (hasta la última fecha del dataset).
+    # Despliegue: las métricas son las de la partición temporal, pero el modelo que sirve la API se reentrena con TODAS las
+    # semanas para que conozca los precios más recientes (hasta la última fecha del dataset).
     final = candidatos()[ganador].fit(df[VARIABLES], df[OBJETIVO])
-    guardar_modelo(CARPETA, final, metricas,
-                   entrada_ejemplo={"region": "TotalUS", "tipo": "conventional", "fecha": str(df.fecha.max().date())},
-                   variables=VARIABLES, fecha_max=str(df.fecha.max().date()), reentrenado_con_todo=True)
-    print("\nMétricas:", {k: v for k, v in metricas.items() if k != "comparacion_cv"})
+    return {"pipeline": final, "metricas": metricas, "fecha_max": str(df.fecha.max().date()),
+            "entrada_ejemplo": {"region": "TotalUS", "tipo": "conventional", "fecha": str(df.fecha.max().date())}}
+
+
+def main() -> None:
+    figuras = carpeta_figuras(CARPETA)
+    df = cargar_datos()
+    entender(df)
+    train, test, corte = particion_temporal(df)
+    explorar(df, figuras, corte)
+    r = entrenar(df, figuras)
+    guardar_modelo(CARPETA, r["pipeline"], r["metricas"], entrada_ejemplo=r["entrada_ejemplo"], variables=VARIABLES,
+                   fecha_max=r["fecha_max"], reentrenado_con_todo=True)
+    print("\nMétricas:", {k: v for k, v in r["metricas"].items() if k != "comparacion_cv"})
     # 6. Conclusión: ver analisis.md
 
 
