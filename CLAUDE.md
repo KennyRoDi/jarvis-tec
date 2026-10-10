@@ -83,8 +83,8 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
 |-------|--------|------------------------|--------|
 | —  | 02 autos           | Referencia: 301 filas, sin nulos | ✅ |
 | 1  | 08 grasa corporal  | 250 filas numéricas, sin nulos; solo excluir `Density` y 2 registros imposibles | ✅ (2026-10-09) |
-| 2  | 09 aguacate        | Sin nulos, pero 54 regiones, fechas y valores por defecto para usarlo con la voz | ⏳ **siguiente** |
-| 3  | 03 vino            | Multiclase: agrupar `quality`, imputar 38 nulos, estratificar | ⏳ |
+| 2  | 09 aguacate        | Sin nulos, pero 54 regiones, fechas y valores por defecto para usarlo con la voz | ✅ (2026-10-09) |
+| 3  | 03 vino            | Multiclase: agrupar `quality`, imputar 38 nulos, estratificar | ⏳ **siguiente** |
 | 4  | 04 churn           | Binaria, muchas categóricas, `TotalCharges` sucia, entrada de ~20 campos | ⏳ |
 | 5  | 05 acv             | 4.9 % de positivos: métricas distintas a accuracy, pesos de clase, umbral | ⏳ |
 | 6  | 06 hepatitis       | Multiclase muy desbalanceada, clase de 7 filas | ⏳ |
@@ -106,6 +106,10 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   `docs_latex/referencias.bib`; solo entran al `.bib` las verificadas.
 - Revisar la literatura del dataset: suele documentar registros erróneos conocidos (en el 08, los casos 42, 48,
   76, 96 y 182) y conviene citarlos al justificar la limpieza.
+- Series de tiempo: partición temporal (no aleatoria), validación cruzada de ventana creciente con las filas de una
+  misma fecha juntas, y la selección solo con el entrenamiento. Evitar mezclar `mes` con la semana ISO (se
+  contradicen en año nuevo); si un transformador propio vive en el `Pipeline`, debe estar en su propio módulo.
+- `HistGradientBoostingRegressor`: fijar `early_stopping=False` (con `auto` depende del tamaño de la muestra).
 - Cada modelo se entrega en su rama `feature/modelo-XX-slug` con PR; un subagente lo verifica de forma
   independiente (pruebas, fuga de información, métricas reproducibles, contrato, coherencia de documentos).
 
@@ -143,7 +147,8 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Registro automático features | ✅                                                                     |
 | Modelo 02 autos              | ✅ entrenado (R² 0.962)                                                |
 | Modelo 08 grasa corporal     | ✅ entrenado (Lasso, R² prueba 0.557 / CV 0.695); falta interfaz |
-| Modelos 01, 03–07, 09, 10    | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
+| Modelo 09 aguacate           | ✅ entrenado (GB, R² prueba 0.418 temporal / CV 0.509); falta interfaz |
+| Modelos 01, 03–07, 10        | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |
 | Comandos de voz → modelo     | 🟡 reconoce el modelo; faltan parámetros y el tono según la emoción   |

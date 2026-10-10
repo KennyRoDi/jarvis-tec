@@ -1,0 +1,57 @@
+{
+  "metricas": {
+    "r2": 0.4182,
+    "mae": 0.2267,
+    "rmse": 0.3006,
+    "modelo": "gradient boosting + tendencia",
+    "comparacion_cv": {
+      "efecto región y tipo (línea base)": {
+        "cv_rmse": 0.307,
+        "cv_rmse_desv": 0.016,
+        "cv_r2": 0.447
+      },
+      "ridge estacional": {
+        "cv_rmse": 0.303,
+        "cv_rmse_desv": 0.025,
+        "cv_r2": 0.459
+      },
+      "ridge estacional + tendencia": {
+        "cv_rmse": 0.322,
+        "cv_rmse_desv": 0.026,
+        "cv_r2": 0.388
+      },
+      "random forest": {
+        "cv_rmse": 0.33,
+        "cv_rmse_desv": 0.024,
+        "cv_r2": 0.358
+      },
+      "random forest + tendencia": {
+        "cv_rmse": 0.337,
+        "cv_rmse_desv": 0.008,
+        "cv_r2": 0.327
+      },
+      "gradient boosting": {
+        "cv_rmse": 0.298,
+        "cv_rmse_desv": 0.021,
+        "cv_r2": 0.477
+      },
+      "gradient boosting + tendencia": {
+        "cv_rmse": 0.288,
+        "cv_rmse_desv": 0.019,
+        "cv_r2": 0.509
+      }
+    },
+    "baseline": {
+      "r2": 0.1128,
+      "mae": 0.2754,
+      "rmse": 0.3712
+    },
+    "n_entrenamiento": 14577,
+    "n_prueba": 3672
+  },
+  "entrada_ejemplo": {
+    "region": "TotalUS",
+    "tipo": "conventional",
+    "fecha": "2018-03-25"
+  }
+}
