@@ -198,6 +198,10 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   acepta enteros como marcas de tiempo: usar `Field(strict=False)` con un `field_validator(mode="before")` que admita solo `AAAA-MM-DD` (modelo 09).
 - Un test transversal comprueba que cada comando de voz se asocia a su propio modelo (`tests/test_api.py`).
 - Los textos para voz no deben contener a la vez las dos conclusiones ("riesgo alto" en un texto de riesgo bajo).
+- **Elegir qué se predice** (modelo 02): si el objetivo es proporcional a una variable de entrada (reventa ≈ razón × precio de agencia), modelar la razón. Un
+  árbol no extrapola en niveles (RMSE 8.98 contra 2.05 con la razón en autos más caros que los del entrenamiento) y la razón baja además la desviación entre
+  pliegues de 0.89 a 0.18. Y **un R² de prueba alto puede ser un accidente de la partición**: el 0.962 anterior se caía a 0.50 al quitar 2 duplicados; comparar
+  siempre todos los candidatos con la misma validación cruzada repetida.
 - **Pruebas de límites con valores literales**: leer los límites desde `Entrada.model_fields` hace que la prueba cambie junto con el código
   (en el 08, 7 mutaciones de límites sobrevivieron así). Escribir los límites esperados en la prueba. Una prueba de "fecha laxa" debe usar un
   valor que pasaría de verdad (un entero que sea medianoche UTC y esté dentro del rango), no uno que otra regla ya rechaza.
@@ -263,7 +267,7 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Ventana PyWebView + FastAPI  | ✅ `backend/main.py` (UI de prueba en `backend/ui_prueba/`)            |
 | Cámara/micrófono en la ventana | ✅ Linux (`core/escritorio.py`, verificado) · ⏳ Windows: lo verifica el compañero |
 | Registro automático features | ✅                                                                     |
-| Modelo 02 autos              | ✅ entrenado (R² 0.962)                                                |
+| Modelo 02 autos              | ✅ entrenado (RF sobre la razón reventa/agencia; R² prueba 0.954 / CV 0.971); falta interfaz |
 | Modelo 08 grasa corporal     | ✅ entrenado (Lasso, R² prueba 0.557 / CV 0.695); falta interfaz |
 | Modelo 09 aguacate           | ✅ entrenado (GB, R² prueba 0.418 temporal / CV 0.509); falta interfaz |
 | Modelo 03 vino               | ✅ entrenado (RF, F1 macro prueba 0.591 / CV 0.595); falta interfaz |

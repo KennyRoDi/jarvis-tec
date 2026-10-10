@@ -82,7 +82,7 @@ cd frontend && npm install
 | #  | Modelo                                   | Tipo           | Estado        |
 |----|------------------------------------------|----------------|---------------|
 | 01 | Precio del Bitcoin                       | Regresión      | ✅ sin habilidad sobre la persistencia (honesto) |
-| 02 | Precio de un automóvil                   | Regresión      | ✅ R² = 0.962 |
+| 02 | Precio de un automóvil                   | Regresión      | ✅ R² = 0.954 |
 | 03 | Calidad del vino                         | Clasificación  | ✅ F1 = 0.59 |
 | 04 | Abandono de clientes de telefonía        | Clasificación  | ✅ AUC = 0.84 |
 | 05 | Riesgo de accidente cerebrovascular      | Clasificación  | ✅ AUC = 0.84 |
