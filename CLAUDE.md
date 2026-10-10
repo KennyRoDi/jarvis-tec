@@ -79,7 +79,7 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
 | 1  | 08 grasa corporal  | 250 filas numéricas, sin nulos; solo excluir `Density` y 2 registros imposibles | ✅ (2026-10-09) |
 | 2  | 09 aguacate        | Sin nulos, pero 54 regiones, fechas y valores por defecto para usarlo con la voz | ✅ (2026-10-09) |
 | 3  | 03 vino            | Multiclase: agrupar `quality`, imputar 38 nulos, estratificar | ✅ (2026-10-09) |
-| 4  | 04 churn           | Binaria, muchas categóricas, `TotalCharges` sucia, entrada de ~20 campos | ✅ (2026-10-09) |
+| 4  | 04 churn           | Binaria, muchas categóricas, `TotalCharges` sucia, formulario de 9 campos elegidos de 18 | ✅ (2026-10-09) |
 | 5  | 05 acv             | 4.9 % de positivos: métricas distintas a accuracy, pesos de clase, umbral | ⏳ **siguiente** |
 | 6  | 06 hepatitis       | Multiclase muy desbalanceada, clase de 7 filas | ⏳ |
 | 7  | 07 cirrosis        | 418 filas, 106 casi vacías, fuga de información, 4 etapas desiguales | ⏳ |
@@ -110,6 +110,15 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   confusión con las clases en su orden natural y `texto` que avise cuando ninguna clase supera el 50 %.
 - **Tamaño del artefacto**: el `.joblib` se versiona en git; mantenerlo < 5 MB (con una prueba que lo vigile) y
   documentar el compromiso entre tamaño y rendimiento cuando se reduzca un ensamble.
+- **`entrenar()` pura + prueba `reproduce`**: separar el entrenamiento (selección, umbral, evaluación) de la escritura
+  en disco, y añadir una prueba marcada `@pytest.mark.reproduce` que lo reejecute en memoria y exija igualdad
+  exacta con `metricas.json`, el umbral, el rango y las probabilidades del artefacto. Es lo que atrapa fugas y
+  errores dentro del entrenamiento (en el modelo 04 sobrevivían 44 de 74 mutaciones sin ella). Excluir en
+  desarrollo con `pytest -m "not reproduce"`. Pendiente aplicarlo a los modelos 08, 09 y 03.
+- `Entrada` estricta (`ConfigDict(extra="forbid", strict=True)`): un nombre de campo mal escrito o `"12"` por `12` no
+  deben aceptarse en silencio (los modelos 08, 09 y 03 aún no lo tienen).
+- Un test transversal comprueba que cada comando de voz se asocia a su propio modelo (`tests/test_api.py`).
+- Los textos para voz no deben contener a la vez las dos conclusiones ("riesgo alto" en un texto de riesgo bajo).
 - **Control de mutaciones**: al terminar las pruebas de un modelo, romper a propósito cada protección (umbral de
   aviso, límites de `Entrada`, estratificación, imputación, texto) y comprobar que alguna prueba falla. Las
   pruebas que solo leen el artefacto guardado no detectan cambios en `train.py`: añadir también pruebas

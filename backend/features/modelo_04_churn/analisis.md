@@ -29,12 +29,13 @@ datos reales de una compañía, lo que limita la validez de las conclusiones (se
 | Demografía    | `gender`, `SeniorCitizen`, `Partner`, `Dependents`                                              |
 
 - **`TotalCharges`** viene como texto y tiene 11 cadenas vacías, todas de clientes con 0 meses de antigüedad
-  (ninguno ha abandonado). Además es redundante: su correlación con `tenure × MonthlyCharges` es de 1.0. Se
+  (ninguno ha abandonado). Además es redundante: su correlación con `tenure × MonthlyCharges` es de 0.9996. Se
   descarta.
 - **Categorías dependientes.** Sin servicio de internet, los seis servicios adicionales valen siempre "No internet
   service"; sin teléfono, `MultipleLines` vale "No phone service". La API valida esta coherencia.
-- **Filas repetidas:** 22 filas tienen exactamente las mismas variables, pero son clientes distintos (cada uno
-  con su identificador); se conservan.
+- **Filas repetidas:** 40 filas repiten exactamente las 19 variables de otra (48 con las 18 que quedan sin
+  `TotalCharges`), pero son clientes distintos, cada uno con su identificador, y pueden tener un abandono distinto;
+  se conservan. Con las 9 variables del modelo es normal que muchos perfiles coincidan (son variables de pocos valores).
 - No hay valores nulos aparte de los descritos.
 
 ## 3. Exploración de los datos (0.5 pts)
@@ -51,7 +52,10 @@ datos reales de una compañía, lo que limita la validez de las conclusiones (se
 ## 4. Modelo (2 pts)
 
 **Partición.** 80 % para entrenamiento (5 634 clientes) y 20 % para prueba (1 409), estratificada por el
-abandono, con `random_state = 42`.
+abandono, con `random_state = 42`. La exploración de la sección 3 es descriptiva y usa los 7 043 clientes; la
+elección de las variables, del modelo y del umbral se hizo solo con el conjunto de entrenamiento. Los
+hiperparámetros del bosque (150 árboles, `min_samples_leaf = 10`, profundidad 10) se fijaron a priori, sin búsqueda
+ni ajuste con la prueba.
 
 **Cuántas variables hacen falta.** El formulario de la aplicación sería incómodo con 18 campos, por lo que se
 midió con la regresión logística y validación cruzada (solo entrenamiento) cuánto se pierde al reducirlas:
@@ -120,10 +124,15 @@ desbalanceados conviene mirar también el AUC PR [Saito2015].
 | 0.50               | 0.801     | 0.656             | 0.529          | 0.586      | [[931, 104], [176, 198]]     |
 | Predecir siempre "No" | 0.735  | —                 | 0.000          | —          | —                            |
 
+Métricas macro al umbral de 0.35 (promedio de las dos clases): precisión 0.715, recall 0.744 y F1 **0.725**
+(0.728 al umbral de 0.50).
+
 Con el umbral de 0.35, el modelo detecta 258 de los 374 clientes que se van (69 %), a costa de contactar a 209
 que se habrían quedado. Su precisión (55 %) duplica la tasa base (26.5 %). Con el umbral de 0.50 se detectan solo
 198 (53 %) pero se molesta a menos clientes. **El umbral óptimo depende del coste de la campaña de retención**;
-aquí se usó F1, que da el mismo peso a ambos errores.
+aquí se usó F1, que da el mismo peso a ambos errores. El umbral exacto es poco crítico: con otras semillas del
+cálculo osciló entre 0.32 y 0.35, y el F1 de prueba se mantiene entre 0.60 y 0.63 para cualquier umbral de 0.20 a
+0.45.
 
 **Calibración** (`figuras/evaluacion.png`): las probabilidades predichas se parecen a las frecuencias reales. Por
 ejemplo, donde el modelo predice en promedio 0.26 la tasa real es 0.28, y donde predice 0.45, 0.40 [más

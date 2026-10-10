@@ -17,9 +17,9 @@
 - **Fuente:** https://github.com/IBM/telco-customer-churn-on-icp4d ✅ ya descargado
 - **Archivo:** `dataset.csv` en esta carpeta.
 - ✅ Verificado: 7043 filas, `Churn` = Yes en 26.5 %. Se descarta `customerID`.
-- `TotalCharges` es texto con 11 cadenas vacías (todas de clientes con `tenure` = 0, ✅ verificado) y es redundante (correlación 1.0 con `tenure × MonthlyCharges`): **se descarta**.
+- `TotalCharges` es texto con 11 cadenas vacías (todas de clientes con `tenure` = 0, ✅ verificado) y es redundante (correlación 0.9996 con `tenure × MonthlyCharges`): **se descarta**.
 - ✅ Es un conjunto de ejemplo **ficticio** de IBM Cognos Analytics: documentarlo como limitación.
-- ✅ 22 filas con las mismas variables pero clientes distintos: se conservan. Sin internet, los 6 servicios adicionales valen "No internet service"; sin teléfono, `MultipleLines` vale "No phone service".
+- ✅ 40 filas repiten las 19 variables de otra (clientes distintos, abandono posiblemente distinto): se conservan. Sin internet, los 6 servicios adicionales valen "No internet service"; sin teléfono, `MultipleLines` vale "No phone service".
 - La mayoría de las columnas son categóricas (Yes/No, tipo de contrato, método de pago).
 
 ## Enfoque sugerido
@@ -32,8 +32,8 @@
 ## Contrato del endpoint
 
 - `POST /api/modelos/churn/predecir` · `GET /api/modelos/churn/info`
-- **Entrada (`Entrada` en `router.py`):** ✅ 9 campos obligatorios: `tenure`, `monthly_charges`, `contract`, `internet_service`, `payment_method`, `paperless_billing`, `tech_support`, `online_security`, `senior_citizen` (valores como en el dataset). Se rechaza la combinación incoherente internet/servicios.
-- **Salida:** `prediccion` `"Yes"`/`"No"` según el **umbral guardado en el artefacto** (0.35, no 0.5) más `probabilidades` de ambas. `texto` dice riesgo alto o bajo y avisa si `tenure`/`monthly_charges` están fuera del rango de entrenamiento.
+- **Entrada (`Entrada` en `router.py`):** ✅ 9 campos obligatorios: `tenure`, `monthly_charges`, `contract`, `internet_service`, `payment_method`, `paperless_billing`, `tech_support`, `online_security`, `senior_citizen` (valores como en el dataset). Entrada estricta (`extra="forbid"`, `strict=True`): rechaza campos desconocidos y tipos laxos. Se rechaza la combinación incoherente internet/servicios.
+- **Salida:** `prediccion` `"Yes"`/`"No"` según el **umbral guardado en el artefacto** (0.35, no 0.5) más `probabilidades` de ambas. `texto` dice riesgo alto o bajo (una sola vez, sin ambigüedad al oírlo) y avisa si `tenure`/`monthly_charges` están fuera del rango de entrenamiento.
 - **¿Se ejecuta solo con la voz?** No: el comando abre el formulario.
 
 El formulario de la interfaz sale de `esquema_entrada` (generado desde `Entrada`).
@@ -61,9 +61,9 @@ Random Forest (1 MB), 9 variables (AUC solo 0.002 menor que con 18), umbral 0.35
 | `test_modelo.py` | Pruebas del endpoint con el modelo real                                  |
 | `analisis.md`    | Redacción académica de las 6 etapas (pasa a LaTeX)                       |
 
-## Referencias sugeridas
+## Referencias
 
-- _Pendiente: al menos un artículo científico que justifique el algoritmo elegido._
+Verificadas y listadas al final de `analisis.md`; están en `docs_latex/referencias.bib`.
 
 ## Criterios de aceptación
 
