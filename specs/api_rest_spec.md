@@ -72,7 +72,7 @@ Lista los modelos de ML registrados (se descubren automáticamente desde `backen
       "slug": "bitcoin",
       "nombre": "Predicción del precio del Bitcoin",
       "tipo": "regresion",
-      "comandos": ["precio del bitcoin", "bitcoin mañana"],
+      "comandos": ["precio del bitcoin", "bitcoin manana", "tipo de cambio del bitcoin"],
       "entrenado": false
     }
   ]
