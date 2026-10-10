@@ -33,13 +33,16 @@ def metricas_regresion(y_real, y_pred) -> dict:
     }
 
 
-def metricas_clasificacion(y_real, y_pred) -> dict:
+def metricas_clasificacion(y_real, y_pred, orden=None) -> dict:
+    """`orden`: clases en su orden natural para la matriz de confusión (filas = real, columnas = predicho).
+    Sin él, scikit-learn las ordena alfabéticamente."""
     return {
         "accuracy": round(float(metrics.accuracy_score(y_real, y_pred)), 4),
         "precision_macro": round(float(metrics.precision_score(y_real, y_pred, average="macro", zero_division=0)), 4),
         "recall_macro": round(float(metrics.recall_score(y_real, y_pred, average="macro", zero_division=0)), 4),
         "f1_macro": round(float(metrics.f1_score(y_real, y_pred, average="macro", zero_division=0)), 4),
-        "matriz_confusion": metrics.confusion_matrix(y_real, y_pred).tolist(),
+        "matriz_confusion": metrics.confusion_matrix(y_real, y_pred, labels=orden).tolist(),
+        **({"orden_clases": list(orden)} if orden is not None else {}),
     }
 
 
