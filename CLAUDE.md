@@ -80,8 +80,8 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
 | 2  | 09 aguacate        | Sin nulos, pero 54 regiones, fechas y valores por defecto para usarlo con la voz | ✅ (2026-10-09) |
 | 3  | 03 vino            | Multiclase: agrupar `quality`, imputar 38 nulos, estratificar | ✅ (2026-10-09) |
 | 4  | 04 churn           | Binaria, muchas categóricas, `TotalCharges` sucia, formulario de 9 campos elegidos de 18 | ✅ (2026-10-09) |
-| 5  | 05 acv             | 4.9 % de positivos: métricas distintas a accuracy, pesos de clase, umbral | ⏳ **siguiente** |
-| 6  | 06 hepatitis       | Multiclase muy desbalanceada, clase de 7 filas | ⏳ |
+| 5  | 05 acv             | 4.9 % de positivos: métricas distintas a accuracy, pesos de clase, umbral | ✅ (2026-10-09) |
+| 6  | 06 hepatitis       | Multiclase muy desbalanceada, clase de 7 filas | ⏳ **siguiente** |
 | 7  | 07 cirrosis        | 418 filas, 106 casi vacías, fuga de información, 4 etapas desiguales | ⏳ |
 | 8  | 01 bitcoin         | Serie temporal: fechas, `-`, partición temporal, rezagos, predicción recursiva | ⏳ |
 | 9  | 10 sp500           | Serie temporal multi-símbolo; interpretar el símbolo desde la voz | ⏳ |
@@ -133,6 +133,15 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   entrenamiento, guardarlo en el artefacto (`umbral=`) y usarlo en el router (no el 0.5 por defecto).
 - Reducir variables con evidencia: comparar AUC/F1 de validación cruzada con 18 / 9 / 6 / 3 variables y guardar el
   experimento en `metricas.json`; un formulario corto vale la pena si la pérdida es menor que la desviación.
+- **Pocos positivos en la prueba** (<100): acompañar las métricas con intervalos bootstrap
+  (`core.entrenamiento.intervalo_bootstrap`) y ofrecer un umbral de sensibilidad (`umbral_para_recall`) además del de
+  F1; con el umbral 0.5 la exactitud puede igualar la de predecir siempre "No" (ACV: 95.1 %) sin detectar a nadie.
+- **Datos faltantes**: comprobar si el valor faltante predice el objetivo (en ACV, `bmi` nulo: 19.9 % contra 4.3 %); si es
+  un artefacto de la recolección, imputar en el `Pipeline` y no usar un indicador que la aplicación no puede dar.
+- **Higiene de pruebas**: nunca `assert ... or True` ni aserciones que no puedan fallar; si un valor válido no puede
+  disparar una rama (p. ej. el aviso de rango del `bmi`), dejar esa imposibilidad como prueba explícita. Probar los
+  umbrales en sus **bordes** con las filas reales más cercanas a cada lado (un umbral de 0.07 en lugar de 0.06 no se
+  detecta con filas lejanas). Los mutantes equivalentes (mismo comportamiento con los datos) se declaran, no se fuerzan.
 - Comprobar si el dataset es real o de ejemplo (el de churn es una muestra ficticia de IBM) y decirlo en las limitaciones.
 - Cada modelo se entrega en su rama `feature/modelo-XX-slug` con PR; un subagente lo verifica de forma
   independiente (pruebas, fuga de información, métricas reproducibles, contrato, coherencia de documentos).
@@ -174,7 +183,8 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Modelo 09 aguacate           | ✅ entrenado (GB, R² prueba 0.418 temporal / CV 0.509); falta interfaz |
 | Modelo 03 vino               | ✅ entrenado (RF, F1 macro prueba 0.591 / CV 0.595); falta interfaz |
 | Modelo 04 churn              | ✅ entrenado (RF, AUC prueba 0.840 / CV 0.845, umbral 0.35); falta interfaz |
-| Modelos 01, 05–07, 10        | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
+| Modelo 05 acv                | ✅ entrenado (RF, AUC prueba 0.838 / CV 0.846, umbrales 0.14 y 0.06); falta interfaz |
+| Modelos 01, 06–07, 10        | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |
 | Comandos de voz → modelo     | 🟡 reconoce el modelo; faltan parámetros y el tono según la emoción   |

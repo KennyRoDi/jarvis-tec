@@ -85,7 +85,7 @@ cd frontend && npm install
 | 02 | Precio de un automóvil                   | Regresión      | ✅ R² = 0.962 |
 | 03 | Calidad del vino                         | Clasificación  | ✅ F1 = 0.59 |
 | 04 | Abandono de clientes de telefonía        | Clasificación  | ✅ AUC = 0.84 |
-| 05 | Riesgo de accidente cerebrovascular      | Clasificación  | Pendiente     |
+| 05 | Riesgo de accidente cerebrovascular      | Clasificación  | ✅ AUC = 0.84 |
 | 06 | Tipo de hepatitis C                      | Clasificación  | Pendiente     |
 | 07 | Etapa de cirrosis                        | Clasificación  | Pendiente     |
 | 08 | Porcentaje de grasa corporal             | Regresión      | ✅ R² = 0.56 (CV 0.70) |
