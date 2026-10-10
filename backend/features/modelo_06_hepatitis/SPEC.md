@@ -19,8 +19,8 @@
 - ✅ Verificado: 615 filas. Hay una columna `Unnamed: 0` (índice): descartarla. Valores de `Category`: `0=Blood Donor` 533, `3=Cirrhosis` 30, `1=Hepatitis` 24, `2=Fibrosis` 21, `0s=suspect Blood Donor` 7.
 - Variables: `Age, Sex` y análisis de laboratorio `ALB, ALP, ALT, AST, BIL, CHE, CHOL, CREA, GGT, PROT`.
 - ✅ Clase `0s=suspect Blood Donor` (7 filas): **se excluye** (valores claramente anormales, albúmina mediana 21.6 g/L; no es donante ni etapa de la enfermedad).
-- ✅ **Los 18 vacíos de `ALP` están todos en pacientes** (0 en donantes): artefacto. Con la mediana como imputación el Random Forest lo aprovecha (F1 macro 0.642 con ALP, 0.588 sin ella); la regresión logística no (0.582 / 0.576). **`ALP` se excluye.**
-- ✅ Ningún donante tiene menos de 32 años (los pacientes llegan a 19): riesgo de aprender la población y no la enfermedad.
+- ✅ **Los 18 vacíos de `ALP` están todos en pacientes** (0 en donantes): se sospechó un artefacto, pero se comprobó que **es señal real**: el aporte al Random Forest sobrevive a rellenar los vacíos al azar con valores observados (0.623 contra 0.635 con ALP y 0.580 sin ella) y el indicador de faltante solo no lo reproduce (0.598). `ALP` **entra** al modelo (a diferencia del `bmi` del modelo 05).
+- ✅ Ningún donante tiene menos de 32 años (los pacientes llegan a 19): riesgo de aprender la población y no la enfermedad. 7 pares de donantes tienen los 10 análisis idénticos con edad distinta (casi duplicados).
 - Las unidades de los análisis no están documentadas en la fuente: se infirieron por el rango (g/L, U/L, µmol/L, mmol/L, kU/L); confirmarlas.
 - Hay 31 nulos en 5 columnas de laboratorio (`ALP` 18, `CHOL` 10). Tras excluir la clase sospechosa: 533 donantes (88 %), 30 cirrosis, 24 hepatitis y 21 fibrosis.
 
@@ -32,7 +32,7 @@
 ## Contrato del endpoint
 
 - `POST /api/modelos/hepatitis/predecir` · `GET /api/modelos/hepatitis/info`
-- **Entrada (`Entrada` en `router.py`):** ✅ 11 campos obligatorios: `age`, `sex` (`f`/`m`) y 9 análisis (`alb`, `alt`, `ast`, `bil`, `che`, `chol`, `crea`, `ggt`, `prot`; **sin `alp`**). Estricta (`extra="forbid"`, `strict=True`).
+- **Entrada (`Entrada` en `router.py`):** ✅ 11 campos obligatorios: `age` y 10 análisis (`alb`, `alp`, `alt`, `ast`, `bil`, `che`, `chol`, `crea`, `ggt`, `prot`); **sin `sex`** (no aporta y es un dato sensible). Estricta (`extra="forbid"`, `strict=True`).
 - **Salida:** `prediccion` ∈ `donante`/`hepatitis`/`fibrosis`/`cirrosis` más los puntajes de las 4 clases en `probabilidades`. El `texto` los lista, aclara que no son probabilidades calibradas ni un diagnóstico, y avisa si un valor sale del rango de entrenamiento.
 - **¿Se ejecuta solo con la voz?** No: el comando abre el formulario.
 
@@ -42,7 +42,7 @@ El formulario de la interfaz sale de `esquema_entrada` (generado desde `Entrada`
 
 - "tipo de hepatitis"
 - "estado del higado"
-- "diagnóstico de hepatitis"
+- "diagnostico de hepatitis"
 
 Frases cortas y en minúscula; no deben coincidir con las de otro modelo.
 

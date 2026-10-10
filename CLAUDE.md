@@ -17,17 +17,18 @@ El desarrollo de los modelos se pausó por límite de cuota. **Antes de seguir, 
 | #3 | `feature/modelo-03-vino`          | `feature/modelo-09-aguacate`      | 03 vino           |
 | #4 | `feature/modelo-04-churn`         | `feature/modelo-03-vino`          | 04 churn          |
 | #5 | `feature/modelo-05-acv`           | `feature/modelo-04-churn`         | 05 acv            |
+| #6 | `feature/modelo-06-hepatitis`     | `feature/modelo-05-acv`           | 06 hepatitis      |
 
-Fusionar en orden #1 → #5; tras cada fusión GitHub redirige el siguiente a `main` (o cambiar la base a mano). Si se
+Fusionar en orden #1 → #6; tras cada fusión GitHub redirige el siguiente a `main` (o cambiar la base a mano). Si se
 piden cambios en un PR intermedio, hay que rebasar las ramas siguientes.
 
 **Pendiente, en este orden:**
-1. **Modelos 06 hepatitis, 07 cirrosis, 01 bitcoin y 10 sp500**, cada uno en su rama `feature/modelo-XX-slug` creada
-   desde la última (`feature/modelo-05-acv`) y con PR apilado. Leer el `SPEC.md` del modelo: trae las trampas ya
+1. **Modelos 07 cirrosis, 01 bitcoin y 10 sp500**, cada uno en su rama `feature/modelo-XX-slug` creada
+   desde la última (`feature/modelo-06-hepatitis`) y con PR apilado. Leer el `SPEC.md` del modelo: trae las trampas ya
    verificadas en los datos. 01 y 10 son series de tiempo: seguir el patrón del 09 (partición y validación por fechas,
    transformador de fechas en módulo propio, reentrenar con todo para servir).
-2. **Re-verificar el 05 con un subagente independiente**: tras la última revisión se quitó el `bmi`, ganó la regresión
-   logística y cambiaron los umbrales (0.11 y 0.045); esos cambios solo se comprobaron con pruebas y mutaciones propias.
+2. **Re-verificar el 05 y el 06 con un subagente independiente**: tras su última revisión cambiaron (05: se quitó el `bmi`, ganó la
+   regresión logística, umbrales 0.11 y 0.045; 06: el ALP volvió a entrar y se quitó el sexo); solo se comprobaron con pruebas y mutaciones propias.
 3. **PR de seguimiento** que lleve a los modelos 08, 09 y 03 lo aprendido después (en el 03, además, quitar `SVC(probability=True)`: el
    parámetro `probability` está deprecado en scikit-learn 1.9 y emite `FutureWarning`): `entrenar()` pura + prueba
    `reproduce`, `Entrada` estricta, `core.fuera_de_rango` (el 08 tiene copia local) y control de mutaciones.
@@ -156,6 +157,10 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   mediana deja un pico que un árbol aísla y "aprende" el artefacto sin que nadie lo incluya (Random Forest con `bmi`
   imputado: AUC 0.8455; sin `bmi`: 0.8347). Comprobarlo reajustando el modelo **con y sin** la variable; si el aporte
   desaparece, excluir la variable. Los umbrales y el recall con pocos positivos dependen de la semilla: reportar el rango.
+- **Artefacto contra señal** (modelos 05 y 06): ante un valor faltante sospechoso, reajustar con (a) la variable quitada, (b) los vacíos
+  rellenados **al azar con valores observados** y (c) solo el indicador de faltante. Si el aporte desaparece con (b), es un artefacto
+  (el `bmi` del 05); si sobrevive, es señal (el ALP del 06). No concluir por analogía: el 06 lo hizo y la revisión lo corrigió.
+- **`herramientas/mutar.py` restaura ambos archivos antes de cada mutación** (un fallo anterior contaminaba las mutaciones consecutivas).
 - **Clases raras (< 30 casos) en multiclase** (modelo 06): ponderar las clases y declarar que los puntajes no son probabilidades
   calibradas; reportar IC bootstrap de la prueba y las predicciones fuera de muestra del entrenamiento (más estables por
   clase); mirar la vista binaria enfermedad/sano. Verificar si el origen de las clases es distinto (los donantes del 06 tienen ≥ 32 años).
@@ -233,7 +238,7 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Modelo 03 vino               | ✅ entrenado (RF, F1 macro prueba 0.591 / CV 0.595); falta interfaz |
 | Modelo 04 churn              | ✅ entrenado (RF, AUC prueba 0.840 / CV 0.845, umbral 0.35); falta interfaz |
 | Modelo 05 acv                | ✅ entrenado (regresión logística, 4 variables sin bmi; AUC prueba 0.840 / CV 0.842, umbrales 0.11 y 0.045); falta interfaz |
-| Modelo 06 hepatitis          | ✅ entrenado (RF, F1 macro prueba 0.640 / CV 0.588, 11 variables sin ALP); falta interfaz |
+| Modelo 06 hepatitis          | ✅ entrenado (RF, F1 macro prueba 0.580 / CV 0.635, 11 variables con ALP y sin sexo); falta interfaz |
 | Modelos 01, 07, 10           | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |
