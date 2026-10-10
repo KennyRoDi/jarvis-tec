@@ -30,7 +30,7 @@
 - `POST /api/modelos/sp500/predecir` · `GET /api/modelos/sp500/info`
 - **Entrada (`Entrada` en `router.py`):** `simbolo` (enum de los símbolos elegidos, por defecto `AAPL`) y `dias_adelante: int = 1`.
 - **Salida:** `prediccion` número en USD; `texto` con el símbolo y la fecha.
-- **¿Se ejecuta solo con la voz?** Sí: "precio de la acción de Apple para mañana" se ejecuta directo (extraer el símbolo del texto con `ALIAS_SIMBOLOS` de `router.py`: apple, microsoft, amazon, google, alphabet; "mañana" = 1 sesión).
+- **¿Se ejecuta solo con la voz?** Sí: "precio de la acción de Apple para mañana" se ejecuta directo (el asistente de voz (Dev B) debe extraer el símbolo del texto con `ALIAS_SIMBOLOS` de `router.py`, que aún no usa ningún código: apple, microsoft, amazon, google, alphabet; "mañana" = 1 sesión).
 
 El formulario de la interfaz sale de `esquema_entrada` (generado desde `Entrada`).
 

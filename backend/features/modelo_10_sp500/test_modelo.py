@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from pydantic import ValidationError
+from scipy.stats import kurtosis
 
 from core.modelos import REGISTRO, cargar_artefacto, leer_metricas
 from features.modelo_10_sp500 import train
@@ -236,11 +237,13 @@ def test_entender_y_explorar(capsys, tmp_path):
     df = cargar_datos()
     entender(df)
     salida = capsys.readouterr().out
-    assert "Filas: 5036" in salida and "Símbolos: 4" in salida and "2013-02-08 a 2018-02-07" in salida
+    assert "Filas: 5036  Columnas: 7  Símbolos: 4  Fechas: 1259" in salida and "2013-02-08 a 2018-02-07" in salida
     assert "{1.0: 986, 2.0: 11, 3.0: 227, 4.0: 34}" in salida and "duplicados (fecha, símbolo): 0" in salida
     explorar(df, tmp_path, df.fecha[1007])
     assert sorted(p.name for p in tmp_path.glob("*.png")) == ["autocorrelacion.png", "correlacion_retornos.png", "retornos_por_simbolo.png", "series_normalizadas.png"]
     salida = capsys.readouterr().out
+    assert "[0.022, -0.01, -0.026, -0.028, -0.014] | cota 95 % por símbolo: ±0.055" in salida
+    assert "(rezagos 1-5): [0.054, 0.021, 0.033, 0.031, 0.023]" in salida
     assert "Correlación media entre pares de símbolos: 0.409" in salida and "Sesiones en que el precio sube: 52.6%" in salida
 
 
@@ -254,6 +257,14 @@ def test_las_cifras_de_exploracion_citadas_en_el_analisis():
     assert round((r > 0).mean(), 3) == 0.526
     assert {s: round(g.cierre.iloc[-1] / g.cierre.iloc[0], 2) for s, g in df.groupby("simbolo")} == {"AAPL": 2.35, "AMZN": 5.41, "GOOGL": 2.68, "MSFT": 3.25}
     assert {s: round(g.cierre.iloc[-1] / g.cierre.iloc[1007] - 1, 2) for s, g in df.groupby("simbolo")} == {"AAPL": 0.21, "AMZN": 0.73, "GOOGL": 0.27, "MSFT": 0.41}
+    por_simbolo_ret = retornos(df).to_frame("r").assign(fecha=df.fecha, simbolo=df.simbolo).pivot(index="fecha", columns="simbolo", values="r").dropna()
+    assert {s: round(float(kurtosis(por_simbolo_ret[s])), 1) for s in SIMBOLOS} == {"AAPL": 3.8, "MSFT": 11.1, "AMZN": 11.0, "GOOGL": 18.6}
+    corr = por_simbolo_ret.corr().to_numpy()[np.triu_indices(4, 1)]
+    assert (corr.min().round(2), corr.max().round(2), corr.mean().round(3)) == (0.29, 0.55, 0.409)
+    prueba = por_simbolo_ret.iloc[1006:]
+    assert len(prueba) == 252
+    por_mitad = {s: (round(prueba[s].iloc[:126].std(), 4), round(prueba[s].iloc[126:].std(), 4)) for s in SIMBOLOS}
+    assert por_mitad == {"AAPL": (0.0112, 0.0125), "MSFT": (0.0082, 0.0121), "AMZN": (0.0101, 0.0164), "GOOGL": (0.0097, 0.012)}
     assert df[df.simbolo == "AAPL"].fecha.iloc[[1005, 1006, 1007, 1259 - 8]].dt.strftime("%Y-%m-%d").tolist() == ["2017-02-06", "2017-02-07", "2017-02-08", "2018-01-29"]
 
 
@@ -263,6 +274,7 @@ def test_los_metadatos_del_modelo_registrado():
     info = REGISTRO["sp500"].info
     assert info["slug"] == "sp500" and info["tipo"] == "regresion" and info["unidad"] == "USD"
     assert info["comandos"] == ["precio de la accion", "bolsa", "sp500"] and REGISTRO["sp500"].entrada is Entrada
+    assert info["nombre"] == "Predicción del precio de acciones del S&P 500"
 
 
 def test_entrada_por_defecto_es_apple_un_dia_y_todos_los_campos_tienen_valor():
@@ -272,11 +284,13 @@ def test_entrada_por_defecto_es_apple_un_dia_y_todos_los_campos_tienen_valor():
     assert esquema["properties"]["simbolo"]["enum"] == list(SIMBOLOS) and esquema["properties"]["simbolo"]["default"] == "AAPL"
     campo = esquema["properties"]["dias_adelante"]
     assert (campo["minimum"], campo["maximum"], campo["default"]) == (1, 7, 1) and campo["description"] and esquema["properties"]["simbolo"]["description"]
+    assert campo["examples"] == [1]
 
 
 def test_los_simbolos_del_router_son_los_del_entrenamiento_y_cada_uno_tiene_nombre_y_alias():
     assert list(SIMBOLOS) == SIMBOLOS_TRAIN and set(NOMBRES) == set(SIMBOLOS)
     assert set(ALIAS_SIMBOLOS.values()) == set(SIMBOLOS)
+    assert NOMBRES == {"AAPL": "Apple", "MSFT": "Microsoft", "AMZN": "Amazon", "GOOGL": "Google"}
     assert ALIAS_SIMBOLOS == {"apple": "AAPL", "microsoft": "MSFT", "amazon": "AMZN", "google": "GOOGL", "alphabet": "GOOGL"}
     assert all(a == a.lower() and a.isascii() for a in ALIAS_SIMBOLOS)
 
@@ -300,7 +314,8 @@ def test_la_entrada_rechaza_lo_mismo_sin_pasar_por_la_api(cuerpo):
 
 
 def test_formato_de_fechas_y_dolares():
-    assert fecha_en_texto(date(2018, 2, 8)) == "8 de febrero de 2018" and fecha_en_texto(date(2018, 12, 31)) == "31 de diciembre de 2018"
+    assert [fecha_en_texto(date(2018, m, 1)) for m in range(1, 13)] == [f"1 de {mes} de 2018" for mes in (
+        "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")]
     assert dolares(1416.78) == "1 416.78" and dolares(93.8) == "93.80" and dolares(1000000.5) == "1 000 000.50"
 
 
@@ -539,3 +554,29 @@ def test_main_escribe_el_artefacto_con_todo_lo_necesario(tmp_path, monkeypatch):
     assert sorted(p.name for p in (tmp_path / "figuras").glob("*.png")) == sorted(
         ["autocorrelacion.png", "correlacion_retornos.png", "habilidad_por_horizonte.png", "prueba_1_dia.png", "retornos_por_simbolo.png", "series_normalizadas.png"])
     assert (tmp_path / "metricas.json").exists()
+
+
+@entrenado
+def test_la_prediccion_se_redondea_a_dos_decimales(cliente):
+    for simbolo in SIMBOLOS:
+        for dias in (1, 7):
+            valor = cliente.post(URL, json={"simbolo": simbolo, "dias_adelante": dias}).json()["prediccion"]
+            assert valor == round(valor, 2)
+    a = cargar_artefacto(CARPETA, "sp500")
+    exacto = recursiva(a["pipeline"], [a["ultimos_cierres"]["AMZN"]], 1)[0, 0]
+    assert abs(exacto - round(exacto, 2)) > 1e-9, "el valor sin redondear tiene más decimales: la prueba sí ejercita el redondeo"
+    assert cliente.post(URL, json={"simbolo": "AMZN"}).json()["prediccion"] == round(exacto, 2)
+
+
+@entrenado
+def test_cada_empresa_se_nombra_en_el_texto_con_su_nombre_literal(cliente):
+    esperado = {"AAPL": "Apple (AAPL)", "MSFT": "Microsoft (MSFT)", "AMZN": "Amazon (AMZN)", "GOOGL": "Google (GOOGL)"}
+    for simbolo, nombre in esperado.items():
+        assert nombre in cliente.post(URL, json={"simbolo": simbolo}).json()["texto"]
+
+
+def test_main_imprime_el_entendimiento_de_los_datos(tmp_path, monkeypatch, capsys):
+    shutil.copy(train.CARPETA / "dataset.csv", tmp_path / "dataset.csv")
+    monkeypatch.setattr(train, "CARPETA", tmp_path)
+    train.main()
+    assert "Filas: 5036" in capsys.readouterr().out

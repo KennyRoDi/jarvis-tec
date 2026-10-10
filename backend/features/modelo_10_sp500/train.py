@@ -84,7 +84,7 @@ def explorar(df: pd.DataFrame, figuras: Path, corte: pd.Timestamp) -> None:
     plt.boxplot([r[df.loc[r.index, "simbolo"] == simbolo] for simbolo in SIMBOLOS], tick_labels=SIMBOLOS)
     plt.xlabel("Símbolo")
     plt.ylabel("Retorno logarítmico diario")
-    plt.title("Retornos diarios: mismas colas pesadas, distinta volatilidad")
+    plt.title("Retornos diarios: colas pesadas de distinto grosor y volatilidad")
     guardar_figura(figuras, "retornos_por_simbolo")
 
     ret = retornos(df).to_frame("r").assign(fecha=df.fecha, simbolo=df.simbolo).pivot(index="fecha", columns="simbolo", values="r").dropna()

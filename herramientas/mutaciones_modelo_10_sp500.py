@@ -93,4 +93,18 @@ M = [
  (T, "artefacto sin marca de reentrenado", "reentrenado_con_todo=True", "reentrenado_con_todo=False"),
  (T, "artefacto sin lista de símbolos", "simbolos=SIMBOLOS, ", ""),
  (T, "cobertura por mitad intercambiada", "d[:mitad].mean() for d in dentro.values()", "d[mitad:].mean() for d in dentro.values()"),
+ # --- añadidas tras la verificación independiente del modelo 10 ---
+ (R, "sin redondear la predicción", "valor = round(valor, 2)", "pass"),
+ (R, "nombre de Amazon distinto", '"AMZN": "Amazon"', '"AMZN": "Amazon Inc"'),
+ (R, "nombre de Google distinto", '"GOOGL": "Google"', '"GOOGL": "Alphabet"'),
+ (R, "julio y agosto intercambiados", '"julio", "agosto"', '"agosto", "julio"'),
+ (R, "sin ejemplo en dias_adelante", ", examples=[1]", ""),
+ (R, "nombre del modelo distinto", '"nombre": "Predicción del precio de acciones del S&P 500"', '"nombre": "x"'),
+ (T, "Fechas cuenta símbolos", "Fechas: {df.fecha.nunique()}", "Fechas: {df.simbolo.nunique()}"),
+ (T, "Columnas cuenta filas", "Columnas: {df.shape[1]}", "Columnas: {df.shape[0]}"),
+ (T, "autocorrelación de r² sin cuadrado", "autocorrelacion(ret[s].to_numpy() ** 2)", "autocorrelacion(ret[s].to_numpy())"),
+ (T, "rezagos 2-6 impresos", "medio[:5]", "medio[1:6]"),
+ (T, "cota 1.64", "cota = 1.96 / np.sqrt(len(ret))", "cota = 1.64 / np.sqrt(len(ret))"),
+ (T, "autocorrelación con otro denominador", "/ np.sum(x ** 2) for k", "/ np.sum(x ** 2) * 2 for k"),
+ (T, "main sin entender", "    entender(df)\n    corte = particion_temporal(df)", "    corte = particion_temporal(df)"),
 ]
