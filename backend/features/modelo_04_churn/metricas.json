@@ -12,6 +12,9 @@
     "precision_yes": 0.5525,
     "recall_yes": 0.6898,
     "f1_yes": 0.6136,
+    "precision_macro": 0.7147,
+    "recall_macro": 0.744,
+    "f1_macro": 0.7246,
     "matriz_confusion": [
       [
         826,
@@ -28,6 +31,9 @@
       "precision_yes": 0.6556,
       "recall_yes": 0.5294,
       "f1_yes": 0.5858,
+      "precision_macro": 0.7483,
+      "recall_macro": 0.7145,
+      "f1_macro": 0.7275,
       "matriz_confusion": [
         [
           931,

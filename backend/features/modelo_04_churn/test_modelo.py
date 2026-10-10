@@ -9,7 +9,7 @@ from sklearn.metrics import roc_auc_score
 from core.modelos import REGISTRO, cargar_artefacto, leer_metricas, predecir_con_pipeline
 from features.modelo_04_churn.router import CARPETA, Entrada
 from features.modelo_04_churn.train import (CATEGORICAS, NUMERICAS, OBJETIVO, POSITIVO, VARIABLES, candidatos, cargar_datos,
-                                            dividir)
+                                            dividir, entrenar, estadisticas_al_umbral)
 
 URL = "/api/modelos/churn/predecir"
 ENTRADA = {
@@ -20,6 +20,12 @@ ENTRADA = {
 SEGURO = {**ENTRADA, "tenure": 60, "contract": "Two year", "internet_service": "DSL", "payment_method": "Credit card (automatic)",
           "paperless_billing": "No", "tech_support": "Yes", "online_security": "Yes", "monthly_charges": 55.0}
 entrenado = pytest.mark.skipif(not REGISTRO["churn"].entrenado, reason="ejecutar features.modelo_04_churn.train")
+
+
+@pytest.fixture(scope="module")
+def reentrenado():
+    """Todo el entrenamiento (selección, umbral, evaluación, experimento) en memoria, sin escribir nada."""
+    return entrenar(cargar_datos(), figuras=None, imprimir=False)
 
 
 def p_abandona(fila: dict) -> float:
@@ -58,6 +64,24 @@ def test_los_candidatos_tratan_cada_variable_como_corresponde():
     assert isinstance(candidatos()["tasa base (línea base)"].named_steps["modelo"], DummyClassifier)
 
 
+def test_estadisticas_al_umbral_incluye_el_borde_y_orienta_la_matriz():
+    """Probabilidad igual al umbral cuenta como "Yes". Matriz: filas = real (No, Yes); columnas = predicho."""
+    y = ["Yes", "Yes", "Yes", "No", "No", "No", "No"]
+    p = [0.35, 0.34, 0.90, 0.35, 0.10, 0.20, 0.05]       # predichos con umbral 0.35: Y N Y Y N N N
+    e = estadisticas_al_umbral(y, p, 0.35)
+    assert e["matriz_confusion"] == [[3, 1], [1, 2]]       # [[TN, FP], [FN, TP]]
+    assert (e["recall_yes"], e["precision_yes"], e["accuracy"]) == (0.6667, 0.6667, 0.7143)
+    assert e["umbral"] == 0.35 and set(e) >= {"precision_macro", "recall_macro", "f1_macro"}
+
+
+def test_los_candidatos_toleran_categorias_desconocidas_al_predecir():
+    """El codificador ignora una categoría nunca vista en lugar de fallar (p. ej. un método de pago nuevo)."""
+    train, _, y_train, _ = dividir(cargar_datos())
+    pipeline = candidatos()["regresión logística"].fit(train[VARIABLES], y_train)
+    nuevo = train[VARIABLES].iloc[[0]].assign(payment_method="Criptomoneda")
+    assert pipeline.predict_proba(nuevo).shape == (1, 2)
+
+
 # --- Validación de la entrada (no requiere el modelo entrenado) ---
 
 def test_la_entrada_acepta_a_todos_los_clientes_reales():
@@ -84,6 +108,25 @@ def test_los_limites_de_entrada_son_razonables_frente_a_los_datos():
 ])
 def test_entradas_invalidas_dan_422(cliente, assert_error, cambio):
     assert_error(cliente.post(URL, json={**ENTRADA, **cambio}), 422, "VALIDACION")
+
+
+@pytest.mark.parametrize("cambio", [
+    {"tenure": "12"}, {"tenure": 12.0}, {"tenure": True}, {"monthly_charges": "70"}, {"payment_method": "Efectivo"},
+    {"total_charges": 840.0},   # campo desconocido: no se ignora en silencio
+    {"contrato": "Two year"},   # nombre mal escrito
+])
+def test_la_entrada_es_estricta_con_tipos_y_campos_desconocidos(cliente, assert_error, cambio):
+    assert_error(cliente.post(URL, json={**ENTRADA, **cambio}), 422, "VALIDACION")
+
+
+def test_todos_los_campos_son_obligatorios(cliente):
+    esquema = cliente.get("/api/modelos/churn/info").json()["esquema_entrada"] if REGISTRO["churn"].entrenado else Entrada.model_json_schema()
+    assert set(esquema["required"]) == set(ENTRADA) and esquema.get("additionalProperties") is False
+
+
+def test_los_metadatos_del_modelo_registrado():
+    info = REGISTRO["churn"].info
+    assert info["tipo"] == "clasificacion" and info["unidad"] is None and info["slug"] == "churn"
 
 
 def test_cliente_sin_internet_es_una_entrada_valida():
@@ -139,9 +182,10 @@ def test_la_clase_depende_del_umbral_guardado_y_no_del_050(cliente):
     filas = cargar_datos().sample(400, random_state=0)[VARIABLES].to_dict("records")
     intermedio = next(f for f in filas if umbral + 0.01 <= p_abandona(f) <= 0.49)
     cuerpo = cliente.post(URL, json=intermedio).json()
-    assert cuerpo["prediccion"] == "Yes" and "riesgo alto" in cuerpo["texto"]
-    assert cliente.post(URL, json=SEGURO).json()["prediccion"] == "No"
-    assert "riesgo bajo" in cliente.post(URL, json=SEGURO).json()["texto"]
+    assert cuerpo["prediccion"] == "Yes" and "riesgo alto" in cuerpo["texto"] and "riesgo bajo" not in cuerpo["texto"]
+    seguro = cliente.post(URL, json=SEGURO).json()
+    assert seguro["prediccion"] == "No" and "riesgo bajo" in seguro["texto"] and "riesgo alto" not in seguro["texto"]
+    assert f"umbral de decisión del modelo es del {round(umbral * 100)} por ciento" in seguro["texto"]
 
 
 @entrenado
@@ -154,9 +198,16 @@ def test_el_perfil_de_riesgo_tiene_sentido():
 
 
 @entrenado
-def test_antiguedad_fuera_de_rango_avisa_que_el_resultado_es_poco_confiable(cliente):
-    assert "poco confiable" in cliente.post(URL, json={**ENTRADA, "tenure": 110}).json()["texto"]
+def test_medidas_fuera_de_rango_avisan_que_el_resultado_es_poco_confiable(cliente):
+    """Se comprueba cada variable numérica por separado y que el rango guardado sea el del entrenamiento."""
     assert "poco confiable" not in cliente.post(URL, json=ENTRADA).json()["texto"]
+    assert "poco confiable" in cliente.post(URL, json={**ENTRADA, "tenure": 110}).json()["texto"]
+    assert "poco confiable" in cliente.post(URL, json={**ENTRADA, "monthly_charges": 128.0}).json()["texto"]
+    rango = cargar_artefacto(CARPETA, "churn")["rango"]
+    assert set(rango) == set(NUMERICAS)
+    train, _, _, _ = dividir(cargar_datos())
+    for campo, (minimo, maximo) in rango.items():
+        assert (minimo, maximo) == (train[campo].min(), train[campo].max()), campo
 
 
 @entrenado
@@ -166,6 +217,22 @@ def test_info_incluye_metricas_esquema_y_ejemplo_valido(cliente):
     assert cuerpo["metricas"]["orden_clases"] == ["No", "Yes"]
     assert set(ENTRADA) == set(cuerpo["esquema_entrada"]["properties"]) == set(cuerpo["entrada_ejemplo"])
     assert cliente.post(URL, json=cuerpo["entrada_ejemplo"]).status_code == 200
+
+
+@pytest.mark.reproduce
+@entrenado
+def test_reentrenar_reproduce_exactamente_lo_publicado(reentrenado):
+    """Cubre todo `entrenar()`: selección, umbral, evaluación y experimento. Si el código cambia (o filtra información
+    del conjunto de prueba) sin volver a entrenar y publicar, las cifras de metricas.json dejan de coincidir."""
+    publicado = leer_metricas(CARPETA)
+    artefacto = cargar_artefacto(CARPETA, "churn")
+    assert reentrenado["metricas"] == publicado["metricas"]
+    assert reentrenado["entrada_ejemplo"] == publicado["entrada_ejemplo"]
+    assert reentrenado["umbral"] == artefacto["umbral"] == publicado["metricas"]["umbral"]
+    assert reentrenado["rango"] == artefacto["rango"]
+    _, test, _, _ = dividir(cargar_datos())
+    esperado = artefacto["pipeline"].predict_proba(test[VARIABLES])
+    assert reentrenado["pipeline"].predict_proba(test[VARIABLES]) == pytest.approx(esperado, abs=1e-9)
 
 
 @entrenado

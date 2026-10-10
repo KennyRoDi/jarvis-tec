@@ -134,11 +134,14 @@ def estadisticas_al_umbral(y_real, p_yes, umbral: float) -> dict:
         "precision_yes": round(float(precision_score(y_real, pred, pos_label=POSITIVO, zero_division=0)), 4),
         "recall_yes": round(float(recall_score(y_real, pred, pos_label=POSITIVO, zero_division=0)), 4),
         "f1_yes": round(float(f1_score(y_real, pred, pos_label=POSITIVO, zero_division=0)), 4),
+        "precision_macro": round(float(precision_score(y_real, pred, average="macro", zero_division=0)), 4),
+        "recall_macro": round(float(recall_score(y_real, pred, average="macro", zero_division=0)), 4),
+        "f1_macro": round(float(f1_score(y_real, pred, average="macro", zero_division=0)), 4),
         "matriz_confusion": [[int(tn), int(fp)], [int(fn), int(tp)]],  # filas = real (No, Yes); columnas = predicho
     }
 
 
-def evaluar(pipeline: Pipeline, X_test, y_test, umbral: float, figuras: Path) -> dict:
+def evaluar(pipeline: Pipeline, X_test, y_test, umbral: float, figuras: Path | None = None) -> dict:
     """5. Evaluación sobre el conjunto de prueba (el umbral viene del entrenamiento, no de la prueba)."""
     p_yes = pipeline.predict_proba(X_test)[:, list(pipeline.classes_).index(POSITIVO)]
     y_bin = (np.asarray(y_test) == POSITIVO).astype(int)
@@ -153,6 +156,8 @@ def evaluar(pipeline: Pipeline, X_test, y_test, umbral: float, figuras: Path) ->
     frac, media = calibration_curve(y_bin, p_yes, n_bins=6, strategy="quantile")
     metricas["calibracion"] = [{"prob_media": round(float(m), 3), "tasa_real": round(float(f), 3)} for m, f in zip(media, frac)]
 
+    if figuras is None:  # sin efectos en disco (pruebas)
+        return metricas
     fig, ejes = plt.subplots(1, 3, figsize=(14, 4))
     fpr, tpr, _ = roc_curve(y_bin, p_yes)
     ejes[0].plot(fpr, tpr, label=f"AUC = {metricas['roc_auc']}")
@@ -169,12 +174,10 @@ def evaluar(pipeline: Pipeline, X_test, y_test, umbral: float, figuras: Path) ->
     return metricas
 
 
-def main() -> None:
-    figuras = carpeta_figuras(CARPETA)
-    df = cargar_datos()
-    entender(df)
-    explorar(df, figuras)
-
+def entrenar(df: pd.DataFrame, figuras: Path | None = None, imprimir: bool = True) -> dict:
+    """Etapas 4 y 5 completas, **sin escribir nada en disco** si `figuras` es None: las pruebas lo reentrenan y
+    exigen reproducir exactamente lo publicado (metricas.json y el artefacto)."""
+    log = print if imprimir else (lambda *a, **k: None)
     train, test, y_train, y_test = dividir(df)
     X_train, X_test = train[VARIABLES], test[VARIABLES]
 
@@ -185,16 +188,17 @@ def main() -> None:
         auc = cross_val_score(pipe, X_train, y_train, cv=validacion, **CV)
         pr = cross_val_score(pipe, X_train, y_train, cv=validacion, **{**CV, "scoring": PR_AUC})
         comparacion[nombre] = {"cv_roc_auc": round(float(auc.mean()), 4), "cv_roc_auc_desv": round(float(auc.std()), 4), "cv_pr_auc": round(float(pr.mean()), 4)}
-        print(f"{nombre:26s} AUC ROC cv = {auc.mean():.4f} ± {auc.std():.4f}   AUC PR cv = {pr.mean():.4f}")
+        log(f"{nombre:26s} AUC ROC cv = {auc.mean():.4f} ± {auc.std():.4f}   AUC PR cv = {pr.mean():.4f}")
     ganador = max((n for n in comparacion if "línea base" not in n), key=lambda n: comparacion[n]["cv_roc_auc"])
-    print(f"\nModelo elegido: {ganador}")
+    log(f"\nModelo elegido: {ganador}")
     pipeline = candidatos()[ganador].fit(X_train, y_train)
 
     # Umbral: maximiza el F1 de "Yes" con predicciones fuera de muestra del entrenamiento (no de la prueba).
+    columna_yes = sorted(set(y_train)).index(POSITIVO)  # cross_val_predict ordena las clases alfabéticamente
     oof = cross_val_predict(candidatos()[ganador], X_train, y_train, method="predict_proba",
-                            cv=StratifiedKFold(5, shuffle=True, random_state=SEMILLA))[:, 1]
+                            cv=StratifiedKFold(5, shuffle=True, random_state=SEMILLA))[:, columna_yes]
     umbral = umbral_optimo_f1((np.asarray(y_train) == POSITIVO).astype(int), oof)
-    print(f"Umbral elegido (F1 de 'Yes' fuera de muestra): {umbral}")
+    log(f"Umbral elegido (F1 de 'Yes' fuera de muestra): {umbral}")
 
     metricas = evaluar(pipeline, X_test, y_test, umbral, figuras)
     metricas["modelo"] = ganador
@@ -210,13 +214,25 @@ def main() -> None:
         cols = todas_las_variables(df) if cols is None else cols
         auc = cross_val_score(armar(LogisticRegression(max_iter=3000), cols), train[cols], y_train, cv=validacion, **CV)
         experimento[nombre] = {"variables": len(cols), "cv_roc_auc": round(float(auc.mean()), 4), "cv_roc_auc_desv": round(float(auc.std()), 4)}
-        print(f"  {nombre:40s} AUC cv = {auc.mean():.4f} ± {auc.std():.4f}")
+        log(f"  {nombre:40s} AUC cv = {auc.mean():.4f} ± {auc.std():.4f}")
     metricas["experimento_variables"] = experimento
 
-    rango = {c: [float(X_train[c].min()), float(X_train[c].max())] for c in NUMERICAS}
-    guardar_modelo(CARPETA, pipeline, metricas, entrada_ejemplo=X_test.iloc[[0]].to_dict("records")[0],
-                   variables=VARIABLES, rango=rango, umbral=umbral)
-    print("\nMétricas:", {k: v for k, v in metricas.items() if k not in ("comparacion_cv", "calibracion", "experimento_variables")})
+    return {
+        "pipeline": pipeline, "metricas": metricas, "umbral": umbral,
+        "rango": {c: [float(X_train[c].min()), float(X_train[c].max())] for c in NUMERICAS},  # rango visto en entrenamiento
+        "entrada_ejemplo": X_test.iloc[[0]].to_dict("records")[0],
+    }
+
+
+def main() -> None:
+    figuras = carpeta_figuras(CARPETA)
+    df = cargar_datos()
+    entender(df)
+    explorar(df, figuras)
+    r = entrenar(df, figuras)
+    guardar_modelo(CARPETA, r["pipeline"], r["metricas"], entrada_ejemplo=r["entrada_ejemplo"],
+                   variables=VARIABLES, rango=r["rango"], umbral=r["umbral"])
+    print("\nMétricas:", {k: v for k, v in r["metricas"].items() if k not in ("comparacion_cv", "calibracion", "experimento_variables")})
     # 6. Conclusión: ver analisis.md
 
 

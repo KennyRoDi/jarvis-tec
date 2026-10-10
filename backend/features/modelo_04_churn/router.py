@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from core.modelos import RespuestaPrediccion, cargar_artefacto, fuera_de_rango, predecir_con_pipeline
 
@@ -28,6 +28,9 @@ SiNoSinInternet = Literal["Yes", "No", "No internet service"]
 
 
 class Entrada(BaseModel):
+    # Estricta: rechaza campos desconocidos (un nombre mal escrito no se ignora en silencio) y tipos laxos ("12", 12.0, true).
+    model_config = ConfigDict(extra="forbid", strict=True)
+
     tenure: int = Field(ge=0, le=120, description="Meses como cliente", examples=[12])
     monthly_charges: float = Field(ge=15, le=130, description="Mensualidad en USD", examples=[70.0])
     contract: Literal["Month-to-month", "One year", "Two year"] = Field(description="Tipo de contrato")
@@ -58,7 +61,7 @@ def predecir(entrada: Entrada) -> RespuestaPrediccion:
     clase = "Yes" if p_abandona >= umbral else "No"
     riesgo = "alto" if clase == "Yes" else "bajo"
     texto = (f"Este cliente tiene una probabilidad del {round(p_abandona * 100)} por ciento de abandonar la compañía, "
-             f"por lo que se clasifica como de riesgo {riesgo}. El modelo marca riesgo alto desde el {round(umbral * 100)} por ciento.")
+             f"por lo que se clasifica como de riesgo {riesgo}. El umbral de decisión del modelo es del {round(umbral * 100)} por ciento.")
     if fuera_de_rango(CARPETA, MODELO_INFO["slug"], datos):
         texto += " Atención: alguna medida está fuera del rango de los clientes con que se entrenó el modelo y el resultado es poco confiable."
     return RespuestaPrediccion(modelo=MODELO_INFO["slug"], prediccion=clase, probabilidades=probabilidades, texto=texto)
