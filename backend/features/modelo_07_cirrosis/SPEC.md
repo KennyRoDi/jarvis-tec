@@ -56,6 +56,7 @@ Random Forest (480 KB), 15 variables de la consulta inicial, entrenado solo con 
 | `router.py`      | `MODELO_INFO`, `Entrada` y `POST /predecir`                              |
 | `test_modelo.py` | Pruebas del endpoint con el modelo real                                  |
 | `analisis.md`    | Redacción académica de las 6 etapas (pasa a LaTeX)                       |
+| `notebook.ipynb` | Versión didáctica para Google Colab (extra; no reemplaza a `train.py`)      |
 
 ## Referencias
 
