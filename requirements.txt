@@ -24,3 +24,4 @@ google-cloud-vision==3.16.0
 # Pruebas
 pytest==9.1.1
 httpx==0.28.1
+nbformat==5.11.1  # valida los notebooks de Colab (regenerarlos además necesita nbclient e ipykernel)
