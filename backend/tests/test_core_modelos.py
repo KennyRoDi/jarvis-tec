@@ -3,7 +3,7 @@ import joblib
 import numpy as np
 import pytest
 
-from core.entrenamiento import metricas_clasificacion
+from core.entrenamiento import metricas_clasificacion, umbral_optimo_f1
 from core.modelos import fuera_de_rango
 
 
@@ -30,3 +30,23 @@ def test_fuera_de_rango_usa_un_margen_del_5_por_ciento_del_ancho(tmp_path, valor
 def test_fuera_de_rango_sin_rango_guardado_no_avisa(tmp_path):
     joblib.dump({"pipeline": None}, tmp_path / "modelo.joblib")
     assert fuera_de_rango(tmp_path, "m", {"x": np.inf}) == []
+
+
+def test_umbral_optimo_f1_baja_el_umbral_cuando_la_clase_positiva_es_rara():
+    """Con probabilidades bien calibradas y una clase rara, el F1 se maximiza con un umbral menor que 0.5."""
+    rng = np.random.default_rng(0)
+    p = rng.beta(1, 6, 5000)                      # probabilidad de ~14 % en promedio
+    y = (rng.random(5000) < p).astype(int)        # etiquetas coherentes con p
+    assert umbral_optimo_f1(y, p) < 0.4
+
+
+def test_umbral_optimo_f1_con_separacion_perfecta_y_empate():
+    y = np.array([0, 0, 0, 1, 1, 1])
+    p = np.array([0.1, 0.2, 0.3, 0.7, 0.8, 0.9])
+    umbral = umbral_optimo_f1(y, p)
+    assert 0.3 < umbral <= 0.7, "debe separar las clases"
+    assert umbral == 0.31, "en caso de empate gana el umbral más bajo"
+
+
+def test_umbral_optimo_f1_acepta_etiquetas_booleanas():
+    assert umbral_optimo_f1([False, True, True], [0.1, 0.6, 0.9]) == pytest.approx(0.11)
