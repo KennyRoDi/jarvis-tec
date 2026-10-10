@@ -60,7 +60,7 @@ imputación de nulos, escalado (cuando corresponde) y codificación del tipo de 
 |------------------------------|------------------------------------------------------------------------------|
 | Clase mayoritaria (base)     | Referencia mínima: siempre predice "media"                                    |
 | Regresión logística          | Modelo lineal interpretable [Hastie2009], con pesos de clase balanceados      |
-| SVM con núcleo RBF           | Frontera no lineal [Cortes1995]; superó a la regresión múltiple y a las redes neuronales en el estudio original [Cortez2009]. Se usó C = 3 fijo, **sin optimizar** |
+| SVM con núcleo RBF           | Frontera no lineal [Cortes1995]; superó a la regresión múltiple y a las redes neuronales en el estudio original [Cortez2009]. Se usó C = 3 fijo, **sin optimizar**, y se compara pero **no es elegible** (no da probabilidades) |
 | Random Forest                | Ensamble de árboles que captura interacciones sin suponer su forma [Breiman2001] |
 | Gradient Boosting            | Ensamble secuencial de árboles [Friedman2001], versión de histogramas de scikit-learn |
 
@@ -87,9 +87,10 @@ versiona en git.
 | Gradient Boosting       | 0.586 ± 0.016   | 0.598     |
 
 Random Forest y Gradient Boosting no se distinguen con claridad (diferencia de 0.009 con desviaciones de 0.012 a
-0.016), mientras que la regresión logística y la SVM quedan por detrás. La SVM no se optimizó, de modo que su
-resultado puede ser mejorable. Además se entrena sin estimar probabilidades (el parámetro `probability` está deprecado en scikit-learn 1.9),
-por lo que no podría ser el modelo elegido: la API devuelve las probabilidades de cada clase y la selección solo considera candidatos que las calculen.
+0.016), mientras que la regresión logística y la SVM quedan por detrás. La SVM no se optimizó (C = 3 fijo), así que se compara solo como referencia. Además se entrena sin estimar probabilidades (el parámetro
+`probability` está deprecado en scikit-learn 1.9), por lo que **no es elegible**: la API devuelve las probabilidades de cada clase y la
+selección solo considera candidatos que las calculan (`elegibles()` en `train.py`). Con ella habría que calibrar su salida, por ejemplo
+con `CalibratedClassifierCV`, lo que no se hizo.
 
 **Conjunto de prueba (1 066 filas):**
 
@@ -136,7 +137,7 @@ sentido) y rechaza combinaciones imposibles, como un dióxido de azufre libre ma
 
 **Limitaciones.** (1) La puntuación sensorial es subjetiva: es un techo natural de lo que se puede predecir.
 (2) Solo se incluyen vinos verdes portugueses; el modelo no es válido para otras regiones ni variedades.
-(3) La SVM no se optimizó y los hiperparámetros del bosque se fijaron sin búsqueda exhaustiva. (4) El conjunto
+(3) La SVM no se optimizó ni es elegible (ver la sección 5), y los hiperparámetros del bosque se fijaron sin búsqueda exhaustiva. (4) El conjunto
 de prueba es una sola partición de 1 066 filas.
 
 ## Referencias (en `docs_latex/referencias.bib`)

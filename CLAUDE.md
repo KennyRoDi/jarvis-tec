@@ -21,8 +21,9 @@ El desarrollo de los modelos se pausó por límite de cuota. **Antes de seguir, 
 | #7 | `feature/modelo-07-cirrosis`      | `feature/modelo-06-hepatitis`     | 07 cirrosis       |
 | #8 | `feature/modelo-01-bitcoin`       | `feature/modelo-07-cirrosis`      | 01 bitcoin        |
 | #9 | `feature/modelo-10-sp500`         | `feature/modelo-01-bitcoin`       | 10 sp500          |
+| #10 | `feature/seguimiento-08-09-03`   | `feature/modelo-10-sp500`         | seguimiento 08, 09, 03 |
 
-Fusionar en orden #1 → #9; tras cada fusión GitHub redirige el siguiente a `main` (o cambiar la base a mano). Si se
+Fusionar en orden #1 → #10; tras cada fusión GitHub redirige el siguiente a `main` (o cambiar la base a mano). Si se
 piden cambios en un PR intermedio, hay que rebasar las ramas siguientes.
 
 **Pendiente, en este orden:**
@@ -44,7 +45,7 @@ piden cambios en un PR intermedio, hay que rebasar las ramas siguientes.
 7. Commits separados (core / modelo / docs), subagente verificador **de solo lectura** (darle la lista de mutaciones ya
    probadas para que busque otras), corregir sus hallazgos, PR apilado con la verificación descrita.
 
-**Entorno:** `cd backend && ../venv/bin/pytest -q` (≈ 45 s; con `-m "not reproduce"` es mucho más rápido, pero **no excluir
+**Entorno:** `cd backend && ../venv/bin/pytest -q` (≈ 5 min; con `-m "not reproduce"` es mucho más rápido, pero **no excluir
 `reproduce` en CI**). No hay Colab conectado: los modelos son pequeños y entrenan en segundos localmente.
 
 ## Arquitectura
@@ -191,7 +192,7 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   en disco, y añadir una prueba marcada `@pytest.mark.reproduce` que lo reejecute en memoria y exija igualdad
   exacta con `metricas.json`, el umbral, el rango y las probabilidades del artefacto. Es lo que atrapa fugas y
   errores dentro del entrenamiento (en el modelo 04 sobrevivían 44 de 74 mutaciones sin ella). Excluir en
-  desarrollo con `pytest -m "not reproduce"`. Lo tienen los modelos 03 a 10.
+  desarrollo con `pytest -m "not reproduce"`. Lo tienen los modelos 01 y 03 a 10 (el 02, de referencia, no).
 - `Entrada` estricta (`ConfigDict(extra="forbid", strict=True)`): un nombre de campo mal escrito o `"12"` por `12` no
   deben aceptarse en silencio. Con una fecha, `strict=True` rechaza hasta "2017-09-15" (pydantic valida el cuerpo en modo Python) y el modo laxo
   acepta enteros como marcas de tiempo: usar `Field(strict=False)` con un `field_validator(mode="before")` que admita solo `AAAA-MM-DD` (modelo 09).
@@ -208,7 +209,7 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   aviso, límites de `Entrada`, estratificación, imputación, texto) y comprobar que alguna prueba falla. Las
   pruebas que solo leen el artefacto guardado no detectan cambios en `train.py`: añadir también pruebas
   estructurales sobre `candidatos()` / `dividir()`. Así se detectaron 8 pruebas débiles en el modelo 03.
-- Para avisar de extrapolación usar `core.modelos.fuera_de_rango` y guardar `rango=` en el artefacto (los modelos 03 a 10 la usan). La matriz de confusión se pide con `metricas_clasificacion(..., orden=...)`.
+- Para avisar de extrapolación usar `core.modelos.fuera_de_rango` y guardar `rango=` en el artefacto (la usan los modelos 03 a 08; el 09 avisa por fecha y el 01 y el 10 son series sin `rango`). La matriz de confusión se pide con `metricas_clasificacion(..., orden=...)`.
 - **`cross_val_score` con etiquetas de texto**: el scorer `average_precision` falla y devuelve `nan` en silencio.
   Usar `make_scorer(average_precision_score, response_method="predict_proba", pos_label=...)` y siempre
   `error_score="raise"`.

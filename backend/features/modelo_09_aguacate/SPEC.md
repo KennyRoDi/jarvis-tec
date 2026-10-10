@@ -29,7 +29,7 @@
 ## Contrato del endpoint
 
 - `POST /api/modelos/aguacate/predecir` · `GET /api/modelos/aguacate/info`
-- **Entrada (`Entrada` en `router.py`):** ✅ `region` (enum de 54), `tipo` (`conventional`/`organic`), `fecha` (ISO, 2015–2100). Todos con valor por defecto (`TotalUS`, `conventional`, hoy): `{}` es válido.
+- **Entrada (`Entrada` en `router.py`):** ✅ `region` (enum de 54), `tipo` (`conventional`/`organic`), `fecha` (cadena `AAAA-MM-DD`, 2015–2100; se rechazan enteros, horas y otros formatos). Todos con valor por defecto (`TotalUS`, `conventional`, hoy): `{}` es válido.
 - **Salida:** `prediccion` número en USD por aguacate. Si la fecha supera en más de 60 días el último dato (25-mar-2018), `texto` avisa que es poco confiable.
 - **¿Se ejecuta solo con la voz?** Sí: "precio del aguacate" se ejecuta con los valores por defecto.
 

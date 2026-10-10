@@ -3,6 +3,7 @@ import shutil
 from datetime import date, timedelta
 
 import joblib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
@@ -25,8 +26,16 @@ entrenado = pytest.mark.skipif(not REGISTRO["aguacate"].entrenado, reason="ejecu
 
 @pytest.fixture(scope="module")
 def reentrenado():
-    """Todo el entrenamiento (selección, evaluación, reentrenamiento final) en memoria, sin escribir nada."""
-    return entrenar(cargar_datos(), figuras=None, imprimir=False)
+    """Todo el entrenamiento en memoria. Se prohíbe escribir: guardar figuras, el artefacto o cualquier archivo hace fallar la prueba."""
+    def prohibido(*a, **k):
+        raise AssertionError("entrenar() no debe escribir en disco")
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(train, "guardar_figura", prohibido)
+        mp.setattr(train, "guardar_modelo", prohibido)
+        mp.setattr(plt, "savefig", prohibido)
+        mp.setattr(joblib, "dump", prohibido)
+        resultado = entrenar(cargar_datos(), figuras=None, imprimir=False)
+    return resultado  # el parche solo vale durante el entrenamiento: otras pruebas sí escriben (main)
 
 
 def precio(cliente, **cambios) -> float:
@@ -221,7 +230,10 @@ def test_entender_y_explorar(capsys, tmp_path):
     assert "Semanas: 169  Regiones: 54" in salida and "Rango: 2015-01-04 a 2018-03-25" in salida
     explorar(df, tmp_path, pd.Timestamp("2017-08-06"))
     assert sorted(p.name for p in tmp_path.glob("*.png")) == ["distribucion_objetivo.png", "estacionalidad.png", "regiones_extremas.png", "serie_nacional.png"]
-    assert "Precio medio por tipo: {'conventional': 1.16, 'organic': 1.65}" in capsys.readouterr().out
+    salida = capsys.readouterr().out
+    assert "Precio medio por tipo: {'conventional': 1.16, 'organic': 1.65}" in salida
+    assert ("Precio medio por mes: {1: 1.31, 2: 1.27, 3: 1.33, 4: 1.37, 5: 1.35, 6: 1.41, 7: 1.46, 8: 1.51, 9: 1.57, 10: 1.58, 11: 1.46, 12: 1.33}"
+            in salida)
 
 
 # --- Entrada estricta, valores por defecto y textos ---

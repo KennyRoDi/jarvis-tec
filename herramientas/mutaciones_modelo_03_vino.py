@@ -66,4 +66,10 @@ M = [
  (T, "artefacto sin variables", "variables=VARIABLES, rango=r[\"rango\"])", "rango=r[\"rango\"])"),
  (T, "matriz de confusión sin orden", "metricas_clasificacion(y_test, y_pred, orden=ORDEN)", "metricas_clasificacion(y_test, y_pred)"),
  (T, "entender cuenta mal", "Filas crudas: {n_crudo}  Filas sin duplicados: {len(df)}", "Filas crudas: {len(df)}  Filas sin duplicados: {n_crudo}"),
+ # --- añadidas tras la verificación independiente del PR de seguimiento ---
+ (T, "entrenar escribe las figuras", "metricas = evaluar(pipeline, X_test, y_test, figuras)", 'metricas = evaluar(pipeline, X_test, y_test, figuras or CARPETA / "figuras")'),
+ (R, "margen del aviso 0", 'fuera_de_rango(CARPETA, MODELO_INFO["slug"], datos)', 'fuera_de_rango(CARPETA, MODELO_INFO["slug"], datos, margen=0.0)'),
+ (R, "margen del aviso 15 %", 'fuera_de_rango(CARPETA, MODELO_INFO["slug"], datos)', 'fuera_de_rango(CARPETA, MODELO_INFO["slug"], datos, margen=0.15)'),
+ (R, "aviso sin Atención", "Atención: alguna medida", "Nota: alguna medida"),
+ (R, "alcohol con tipos laxos", "alcohol: float = Field(ge=7.5,", "alcohol: float = Field(strict=False, ge=7.5,"),
 ]

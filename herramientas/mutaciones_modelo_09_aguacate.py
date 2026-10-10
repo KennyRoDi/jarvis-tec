@@ -60,4 +60,7 @@ M = [
  (T, "artefacto sin marca de reentrenado", "reentrenado_con_todo=True", "reentrenado_con_todo=False"),
  (T, "main sin entender", "    entender(df)\n    train, test, corte", "    train, test, corte"),
  (T, "entender cuenta mal", "Semanas: {df.fecha.nunique()}", "Semanas: {df.region.nunique()}"),
+ # --- añadidas tras la verificación independiente del PR de seguimiento ---
+ (T, "entrenar escribe las figuras", "metricas = evaluar(pipeline, test, figuras)", 'metricas = evaluar(pipeline, test, figuras or CARPETA / "figuras")'),
+ (T, "explorar agrupa por año", "df.groupby(df.fecha.dt.month)[OBJETIVO].mean().round(2).to_dict()", "df.groupby(df.fecha.dt.year)[OBJETIVO].mean().round(2).to_dict()"),
 ]

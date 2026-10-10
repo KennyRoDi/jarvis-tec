@@ -146,8 +146,8 @@ def evaluar(pipeline: Pipeline, X_test, y_test, figuras: Path | None = None) -> 
 
 
 def entrenar(crudo: pd.DataFrame, figuras: Path | None = None, imprimir: bool = True) -> dict:
-    """Etapas 4 y 5 completas a partir de los datos **crudos** (con duplicados: el experimento los necesita), **sin escribir nada
-    en disco** si `figuras` es None: las pruebas lo reentrenan y exigen reproducir exactamente lo publicado."""
+    """Etapas 4 y 5 completas a partir de `cargar_datos(quitar_duplicados=False)` (con duplicados: el experimento los necesita),
+    **sin escribir nada en disco** si `figuras` es None: las pruebas lo reentrenan y exigen reproducir exactamente lo publicado."""
     log = print if imprimir else (lambda *a, **k: None)
     df = sin_duplicados(crudo)
     X_train, X_test, y_train, y_test = dividir(df)
@@ -177,7 +177,6 @@ def entrenar(crudo: pd.DataFrame, figuras: Path | None = None, imprimir: bool = 
 
     # Experimento: por qué se descartan los duplicados. Con ellos, filas idénticas caen en entrenamiento y
     # prueba y la métrica sube sin que el modelo generalice mejor.
-    crudo = crudo.assign(**{OBJETIVO: agrupar_calidad(crudo["quality"])})
     Xc, yc = crudo[VARIABLES], crudo[OBJETIVO]
     Xc_tr, Xc_te, yc_tr, yc_te = train_test_split(Xc, yc, test_size=0.2, stratify=yc, random_state=SEMILLA)
     inflado = clone(candidatos()[ganador]).fit(Xc_tr, yc_tr)

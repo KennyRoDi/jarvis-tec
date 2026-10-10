@@ -2,6 +2,7 @@
 import shutil
 
 import joblib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
@@ -32,8 +33,16 @@ entrenado = pytest.mark.skipif(not REGISTRO["grasa_corporal"].entrenado,
 
 @pytest.fixture(scope="module")
 def reentrenado():
-    """Todo el entrenamiento (selección, evaluación, experimento de la fuga) en memoria, sin escribir nada."""
-    return entrenar(limpiar(cargar_datos(), imprimir=False), figuras=None, imprimir=False)
+    """Todo el entrenamiento en memoria. Se prohíbe escribir: guardar figuras, el artefacto o cualquier archivo hace fallar la prueba."""
+    def prohibido(*a, **k):
+        raise AssertionError("entrenar() no debe escribir en disco")
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(train, "guardar_figura", prohibido)
+        mp.setattr(train, "guardar_modelo", prohibido)
+        mp.setattr(plt, "savefig", prohibido)
+        mp.setattr(joblib, "dump", prohibido)
+        resultado = entrenar(limpiar(cargar_datos(), imprimir=False), figuras=None, imprimir=False)
+    return resultado  # el parche solo vale durante el entrenamiento: otras pruebas sí escriben (main)
 
 
 @entrenado
@@ -165,6 +174,16 @@ def test_tipos_laxos_y_campos_desconocidos_dan_422(cliente, assert_error, cambio
 
 
 @pytest.mark.parametrize("campo", list(LIMITES))
+def test_cada_campo_rechaza_cadenas_y_booleanos_por_ser_estricto(cliente, assert_error, campo):
+    assert_error(cliente.post(URL, json={**ENTRADA, campo: str(ENTRADA[campo])}), 422, "VALIDACION")
+    assert_error(cliente.post(URL, json={**ENTRADA, campo: True}), 422, "VALIDACION")
+
+
+def test_la_edad_exige_un_entero_aunque_venga_como_45_0(cliente, assert_error):
+    assert_error(cliente.post(URL, json={**ENTRADA, "age": 45.0}), 422, "VALIDACION")
+
+
+@pytest.mark.parametrize("campo", list(LIMITES))
 def test_el_limite_de_cada_campo_es_inclusivo_y_rechaza_lo_que_lo_excede(campo):
     minimo, maximo = LIMITES[campo]
     tipo = int if campo == "age" else float
@@ -222,11 +241,24 @@ def test_una_sola_medida_fuera_del_rango_basta_para_avisar(cliente):
 
 
 @entrenado
+@pytest.mark.parametrize("campo", ["weight_kg", "abdomen_cm", "chest_cm"])
+def test_el_margen_del_aviso_es_el_5_por_ciento_del_rango(cliente, campo):
+    """4 % por encima del máximo de entrenamiento no avisa; 6 % sí (valores literales, no leídos del código)."""
+    minimo, maximo = cargar_artefacto(CARPETA, "grasa_corporal")["rango"][campo]
+    ancho = maximo - minimo
+    assert maximo + 0.06 * ancho < LIMITES[campo][1], "el caso debe ser una entrada válida"
+    sin_aviso = cliente.post(URL, json={**ENTRADA, campo: maximo + 0.04 * ancho}).json()["texto"]
+    con_aviso = cliente.post(URL, json={**ENTRADA, campo: maximo + 0.06 * ancho}).json()["texto"]
+    assert "poco confiable" not in sin_aviso and "Atención: alguna medida está fuera del rango de los datos de entrenamiento" in con_aviso
+
+
+@entrenado
 def test_la_respuesta_redondea_a_un_decimal_y_no_modifica_la_entrada(cliente):
     cuerpo = cliente.post(URL, json=ENTRADA).json()
     assert cuerpo["prediccion"] == round(cuerpo["prediccion"], 1)
     crudo, _ = predecir_con_pipeline(CARPETA, "grasa_corporal", ENTRADA)
     assert cuerpo["prediccion"] == round(max(crudo, 0.0), 1) and str(cuerpo["prediccion"]) in cuerpo["texto"]
+    assert f"el porcentaje de grasa corporal estimado es {cuerpo['prediccion']} por ciento" in cuerpo["texto"]
     assert "hombres adultos" in cuerpo["texto"] and "orientativa" in cuerpo["texto"]
 
 

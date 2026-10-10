@@ -47,6 +47,8 @@ Frases cortas y en minúscula; no deben coincidir con las de otro modelo.
 
 Lasso, R² de prueba 0.557 (validación cruzada 0.695), MAE 3.9 puntos de %. El modelo extrapola mal con medidas extremas y la API lo advierte. Detalle en `analisis.md`.
 
+La `Entrada` es estricta: `age` debe ser un entero JSON (`45.0` se rechaza), no se aceptan números como texto ni campos desconocidos.
+
 ## Archivos
 
 | Archivo          | Contenido                                                                |

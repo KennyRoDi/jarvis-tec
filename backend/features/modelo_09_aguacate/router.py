@@ -58,7 +58,7 @@ class Entrada(BaseModel):
         hora. Se admite únicamente una cadena AAAA-MM-DD (o un objeto `date`, para uso interno)."""
         if isinstance(valor, str) and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", valor):
             raise ValueError("la fecha debe tener el formato AAAA-MM-DD")
-        if not isinstance(valor, (str, date)) or isinstance(valor, bool):
+        if not isinstance(valor, (str, date)):
             raise ValueError("la fecha debe ser una cadena AAAA-MM-DD")
         return valor
 

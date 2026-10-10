@@ -58,4 +58,11 @@ M = [
  (T, "artefacto sin variables", "variables=VARIABLES, rango=r[\"rango\"])", "rango=r[\"rango\"])"),
  (T, "limpiar no informa", 'print(f"Registros imposibles descartados', 'print(f"Descartados'),
  (T, "entender cuenta mal", 'print(f"Filas: {len(df)}  Columnas: {df.shape[1]}")', 'print(f"Filas: {len(df)}  Columnas: {df.shape[0]}")'),
+ # --- añadidas tras la verificación independiente del PR de seguimiento ---
+ (T, "entrenar escribe las figuras", "metricas = evaluar(pipeline, X_test, y_test, figuras)", 'metricas = evaluar(pipeline, X_test, y_test, figuras or CARPETA / "figuras")'),
+ (R, "margen del aviso 0", 'fuera_de_rango(CARPETA, MODELO_INFO["slug"], datos)', 'fuera_de_rango(CARPETA, MODELO_INFO["slug"], datos, margen=0.0)'),
+ (R, "margen del aviso 15 %", 'fuera_de_rango(CARPETA, MODELO_INFO["slug"], datos)', 'fuera_de_rango(CARPETA, MODELO_INFO["slug"], datos, margen=0.15)'),
+ (R, "rodilla con tipos laxos", "knee_cm: float = Field(ge=30,", "knee_cm: float = Field(strict=False, ge=30,"),
+ (R, "texto sin por ciento", "es {valor} por ciento.", "es {valor} unidades."),
+ (R, "aviso sin Atención", "Atención: alguna medida", "Nota: alguna medida"),
 ]

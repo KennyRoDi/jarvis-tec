@@ -2,6 +2,7 @@
 import shutil
 
 import joblib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
@@ -30,8 +31,16 @@ entrenado = pytest.mark.skipif(not REGISTRO["vino"].entrenado, reason="ejecutar 
 
 @pytest.fixture(scope="module")
 def reentrenado():
-    """Todo el entrenamiento (selección, evaluación, experimento de duplicados) en memoria, sin escribir nada."""
-    return entrenar(cargar_datos(quitar_duplicados=False), figuras=None, imprimir=False)
+    """Todo el entrenamiento en memoria. Se prohíbe escribir: guardar figuras, el artefacto o cualquier archivo hace fallar la prueba."""
+    def prohibido(*a, **k):
+        raise AssertionError("entrenar() no debe escribir en disco")
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(train, "guardar_figura", prohibido)
+        mp.setattr(train, "guardar_modelo", prohibido)
+        mp.setattr(plt, "savefig", prohibido)
+        mp.setattr(joblib, "dump", prohibido)
+        resultado = entrenar(cargar_datos(quitar_duplicados=False), figuras=None, imprimir=False)
+    return resultado  # el parche solo vale durante el entrenamiento: otras pruebas sí escriben (main)
 
 
 def probabilidades(fila: dict) -> dict:
@@ -357,6 +366,24 @@ def test_el_aviso_de_extrapolacion_se_dispara_con_una_sola_medida_fuera_del_rang
         lejos = min(maximo + (maximo - minimo) * 0.2, LIMITES[campo][1])
         assert "poco confiable" in cliente.post(URL, json={**ENTRADA, campo: lejos}).json()["texto"], campo
         assert "poco confiable" not in cliente.post(URL, json={**ENTRADA, campo: min(max(ENTRADA[campo], minimo), maximo)}).json()["texto"], campo
+
+
+@entrenado
+@pytest.mark.parametrize("campo", ["alcohol", "residual_sugar", "chlorides"])
+def test_el_margen_del_aviso_es_el_5_por_ciento_del_rango(cliente, campo):
+    """4 % por encima del máximo de entrenamiento no avisa; 6 % sí (valores literales, no leídos del código)."""
+    minimo, maximo = cargar_artefacto(CARPETA, "vino")["rango"][campo]
+    ancho = maximo - minimo
+    assert maximo + 0.06 * ancho < LIMITES[campo][1], "el caso debe ser una entrada válida"
+    sin_aviso = cliente.post(URL, json={**ENTRADA, campo: maximo + 0.04 * ancho}).json()["texto"]
+    con_aviso = cliente.post(URL, json={**ENTRADA, campo: maximo + 0.06 * ancho}).json()["texto"]
+    assert "poco confiable" not in sin_aviso and "Atención: alguna medida está fuera del rango de los vinos con que se entrenó el modelo" in con_aviso
+
+
+@pytest.mark.parametrize("campo", list(LIMITES))
+def test_cada_campo_rechaza_cadenas_y_booleanos_por_ser_estricto(cliente, assert_error, campo):
+    assert_error(cliente.post(URL, json={**ENTRADA, campo: str(ENTRADA[campo])}), 422, "VALIDACION")
+    assert_error(cliente.post(URL, json={**ENTRADA, campo: True}), 422, "VALIDACION")
 
 
 @entrenado

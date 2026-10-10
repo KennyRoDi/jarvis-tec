@@ -74,7 +74,7 @@ def explorar(df: pd.DataFrame, figuras: Path) -> None:
     plt.title("Correlación entre variables")
     guardar_figura(figuras, "correlacion")
 
-    sns.regplot(data=df, x="abdomen_cm", y=OBJETIVO, scatter_kws={"alpha": 0.6})
+    sns.regplot(data=df, x="abdomen_cm", y=OBJETIVO, scatter_kws={"alpha": 0.6}, seed=SEMILLA)  # semilla: el IC es por bootstrap
     plt.title("Circunferencia abdominal vs. grasa corporal")
     guardar_figura(figuras, "abdomen_vs_grasa")
 
