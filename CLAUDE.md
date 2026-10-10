@@ -100,6 +100,10 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   `docs_latex/referencias.bib`; solo entran al `.bib` las verificadas.
 - Revisar la literatura del dataset: suele documentar registros erróneos conocidos (en el 08, los casos 42, 48,
   76, 96 y 182) y conviene citarlos al justificar la limpieza.
+- Series de tiempo: partición temporal (no aleatoria), validación cruzada de ventana creciente con las filas de una
+  misma fecha juntas, y la selección solo con el entrenamiento. Evitar mezclar `mes` con la semana ISO (se
+  contradicen en año nuevo); si un transformador propio vive en el `Pipeline`, debe estar en su propio módulo.
+- `HistGradientBoostingRegressor`: fijar `early_stopping=False` (con `auto` depende del tamaño de la muestra).
 - Cada modelo se entrega en su rama `feature/modelo-XX-slug` con PR; un subagente lo verifica de forma
   independiente (pruebas, fuga de información, métricas reproducibles, contrato, coherencia de documentos).
 
@@ -137,7 +141,7 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Registro automático features | ✅                                                                     |
 | Modelo 02 autos              | ✅ entrenado (R² 0.962)                                                |
 | Modelo 08 grasa corporal     | ✅ entrenado (Lasso, R² prueba 0.557 / CV 0.695); falta interfaz |
-| Modelo 09 aguacate           | ✅ entrenado (GB, R² prueba 0.405 temporal / CV 0.506); falta interfaz |
+| Modelo 09 aguacate           | ✅ entrenado (GB, R² prueba 0.418 temporal / CV 0.509); falta interfaz |
 | Modelos 01, 03–07, 10        | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |

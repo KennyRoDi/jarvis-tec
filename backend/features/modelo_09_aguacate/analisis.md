@@ -38,7 +38,8 @@ que no afecta a la predicción de un punto pero sí a cualquier conclusión esta
 
 ## 3. Exploración de los datos (0.5 pts)
 
-- `figuras/distribucion_objetivo.png`: distribución **bimodal** (dos concentraciones, alrededor de 1.1 y 1.5 USD, que corresponden a los dos tipos) con cola derecha hasta 3.25 USD.
+- `figuras/distribucion_objetivo.png`: distribución con dos concentraciones suaves (alrededor de 1.1 y 1.4 USD, reflejo de los dos tipos, que se solapan
+  bastante: el convencional tiene media 1.16 y desviación 0.26, y el orgánico, 1.65 y 0.36) y cola derecha hasta 3.25 USD.
 - `figuras/estacionalidad.png`: el precio medio general sube del mínimo de febrero (1.27) al máximo de octubre (1.58). En ambos
   tipos el mínimo es en febrero y el máximo en septiembre (orgánico) u octubre (convencional): hay estacionalidad anual clara.
 - El orgánico cuesta en promedio 1.65 USD frente a 1.16 del convencional.
@@ -50,18 +51,20 @@ que no afecta a la predicción de un punto pero sí a cualquier conclusión esta
 
 **Anomalía detectada.** El precio orgánico nacional (`TotalUS`) queda exactamente en 1.00 durante 6 semanas
 consecutivas (del 5 de julio al 9 de agosto de 2015), mientras que las semanas vecinas valen 1.64 y 1.75. Es
-un artefacto evidente de los datos, pero afecta solo a 6 de 18 249 filas (0.03 %) y ninguna otra región
-presenta el problema. Se conservó porque un precio de 1.00 no es imposible y su efecto es despreciable.
+un artefacto evidente de los datos, pero afecta solo a 6 de 18 249 filas (0.03 %). Otras series tienen rachas de hasta 5 semanas con el mismo precio,
+pero ninguna tan larga ni con un salto de unos 0.65 USD. Se conservó porque un precio de 1.00 no es imposible y su efecto es despreciable.
 
 ## 4. Modelo (2 pts)
 
-**Partición temporal.** Se reservaron como prueba las **últimas 33 semanas** (del 6 de agosto de 2017 al 25 de
-marzo de 2018; 3 672 filas) y se entrenó con las 136 anteriores (14 577 filas). A diferencia de una partición
+**Partición temporal.** Se reservaron como prueba las **últimas 34 semanas** (del 6 de agosto de 2017 al 25 de
+marzo de 2018; 3 672 filas) y se entrenó con las 135 anteriores (14 577 filas). A diferencia de una partición
 aleatoria, esta mide la capacidad de predecir el futuro respecto del entrenamiento [Hyndman2021].
 
 **Variables.** Un transformador propio (`preprocesamiento.py`), incluido dentro del `Pipeline`, deriva de la
 fecha el mes, la semana del año y una tendencia `t` (años desde el inicio) **truncada al último valor visto**:
-el modelo no extrapola la tendencia a fechas futuras. Así, el entrenamiento y la API aplican exactamente el
+el modelo no extrapola la tendencia a fechas futuras (para los modelos de árboles esto no cambia nada, porque
+ya son constantes más allá del último valor visto; protege a los lineales). La semana se calcula a partir del día
+del año y no con el calendario ISO, que contradice al mes cerca de año nuevo. Así, el entrenamiento y la API aplican exactamente el
 mismo tratamiento.
 
 **Candidatos.** Se compararon siete variantes, con y sin tendencia:
@@ -88,24 +91,24 @@ El modelo elegido es **Gradient Boosting con tendencia**.
 | Efecto región y tipo (línea base)   | 0.307 ± 0.016   | 0.447 |
 | Ridge estacional                    | 0.303 ± 0.025   | 0.459 |
 | Ridge estacional + tendencia        | 0.322 ± 0.026   | 0.388 |
-| Random Forest                       | 0.330 ± 0.025   | 0.359 |
-| Random Forest + tendencia           | 0.340 ± 0.008   | 0.317 |
-| Gradient Boosting                   | 0.300 ± 0.023   | 0.469 |
-| **Gradient Boosting + tendencia**   | **0.288 ± 0.023** | 0.506 |
+| Random Forest                       | 0.330 ± 0.024   | 0.358 |
+| Random Forest + tendencia           | 0.337 ± 0.008   | 0.327 |
+| Gradient Boosting                   | 0.298 ± 0.021   | 0.477 |
+| **Gradient Boosting + tendencia**   | **0.288 ± 0.019** | 0.509 |
 
-Las diferencias entre los tres mejores (0.288, 0.300 y 0.303) son menores que la variación entre pliegues
-(≈ 0.023): **no son estadísticamente distinguibles**. La evidencia sobre la tendencia es mixta: empeora a Ridge
+Las diferencias entre los tres mejores (0.288, 0.298 y 0.303) son menores que la variación entre pliegues
+(≈ 0.02): **no son estadísticamente distinguibles**. La evidencia sobre la tendencia es mixta: empeora a Ridge
 y a Random Forest y mejora a Gradient Boosting. Además, el aporte de la estacionalidad respecto de la línea base
-en validación cruzada es modesto (0.307 a 0.300).
+en validación cruzada es modesto (0.307 a 0.298).
 
-**Conjunto de prueba (últimas 33 semanas):**
+**Conjunto de prueba (últimas 34 semanas):**
 
 | Modelo                              | R²    | MAE (USD) | RMSE (USD) |
 |-------------------------------------|-------|-----------|------------|
 | Efecto región y tipo (línea base)   | 0.113 | 0.275     | 0.371      |
-| Gradient Boosting + tendencia       | 0.405 | 0.230     | 0.304      |
+| Gradient Boosting + tendencia       | 0.418 | 0.227     | 0.301      |
 
-El modelo reduce el RMSE de 0.371 a 0.304 USD (18 %) y el R² pasa de 0.113 a 0.405. En `figuras/prueba_nacional.png`
+El modelo reduce el RMSE de 0.371 a 0.301 USD (19 %) y el R² pasa de 0.113 a 0.418. En `figuras/prueba_nacional.png`
 se observa que **no reproduce el pico de agosto a octubre de 2017**: predice una línea casi plana alrededor del
 último nivel conocido, y sigue mejor la bajada de diciembre a febrero, aunque en marzo de 2018 sobrestima el convencional (1.28 frente a 1.05 reales). Esto es esperable: un
 cambio de nivel de ese tipo no se puede anticipar solo con la región, el tipo y la fecha. El error está
@@ -118,9 +121,9 @@ se pueden medir con datos independientes.
 ## 6. Conclusión (0.5 pts)
 
 Con solo la región, el tipo y la fecha es posible estimar el precio del aguacate con un error medio de
-aproximadamente 0.23 USD (RMSE 0.30), un 18 % mejor que predecir el promedio histórico de cada serie. La
+aproximadamente 0.23 USD (RMSE 0.30), un 19 % mejor que predecir el promedio histórico de cada serie. La
 estructura que sí es predecible es doble: el nivel de cada región (Houston barata, Hartford y San Francisco
-caras), la prima del orgánico (+0.49 USD) y una estacionalidad anual moderada.
+caras), la prima del orgánico (+0.50 USD) y una estacionalidad anual moderada.
 
 Lo que **no** es predecible con estas variables es el nivel general de precios, que cambia por shocks de oferta
 como el de 2017. Por eso la selección entre modelos no fue concluyente y la mejora de la estacionalidad es
@@ -130,8 +133,10 @@ precio reciente del mercado como entrada.
 **Limitaciones.** (1) Los datos terminan en marzo de 2018: para fechas posteriores la estimación se basa en la
 estacionalidad y en el último nivel conocido, y la API lo advierte (`poco confiable`). Una consulta con la fecha
 de hoy recibe esa advertencia. (2) Solo hay tres ciclos anuales completos para estimar la estacionalidad.
-(3) Las regiones agregadas se solapan con las ciudades. (4) El conjunto de prueba es una sola ventana de 33
-semanas, que incluye un episodio extremo, por lo que la métrica es sensible a él.
+(3) Las regiones agregadas se solapan con las ciudades. (4) El conjunto de prueba es una sola ventana de 34
+semanas, que incluye un episodio extremo, por lo que la métrica es sensible a él; además, con semillas distintas
+el R² de prueba varió entre 0.40 y 0.43 (comprobación independiente), de modo que las diferencias pequeñas entre
+candidatos no son concluyentes.
 
 ## Referencias (en `docs_latex/referencias.bib`)
 

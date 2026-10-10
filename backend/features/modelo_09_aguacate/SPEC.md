@@ -45,7 +45,7 @@ Frases cortas y en minúscula; no deben coincidir con las de otro modelo.
 
 ## Resultado (2026-10-09)
 
-Gradient boosting con tendencia, partición temporal (últimas 33 semanas): R² 0.405, RMSE 0.304 USD frente a 0.371 de la línea base. No capta el pico de 2017. Con solo región, tipo y fecha el nivel general de precios no es predecible. Detalle en `analisis.md`.
+Gradient boosting con tendencia, partición temporal (últimas 34 semanas): R² 0.418, RMSE 0.301 USD frente a 0.371 de la línea base. No capta el pico de 2017. Con solo región, tipo y fecha el nivel general de precios no es predecible. Detalle en `analisis.md`.
 
 ## Archivos
 
@@ -58,9 +58,9 @@ Gradient boosting con tendencia, partición temporal (últimas 33 semanas): R² 
 | `test_modelo.py` | Pruebas del endpoint con el modelo real                                  |
 | `analisis.md`    | Redacción académica de las 6 etapas (pasa a LaTeX)                       |
 
-## Referencias sugeridas
+## Referencias
 
-- _Pendiente: al menos un artículo científico que justifique el algoritmo elegido._
+Verificadas y listadas al final de `analisis.md`; están en `docs_latex/referencias.bib`.
 
 ## Criterios de aceptación
 
