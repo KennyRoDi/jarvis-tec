@@ -19,6 +19,7 @@
 - ✅ Verificado: 6497 filas. Las columnas vienen con espacios (`fixed acidity`, `free sulfur dioxide`…): renombrar a `snake_case` en `train.py`. `quality` = 3:30, 4:216, 5:2138, 6:2836, 7:1079, 8:193, 9:5.
 - Variables: `type` (red/white, 1599/4898) más 11 fisicoquímicas (acidez, azúcar, cloruros, sulfitos, densidad, pH, sulfatos, alcohol).
 - Hay 38 nulos repartidos en 7 columnas (✅ verificado): imputar dentro del `Pipeline`.
+- ✅ **1 168 filas duplicadas (18 %)**: se descartan antes de dividir; no hacerlo infla la exactitud ~10 puntos (experimento en `metricas.json`).
 - Las clases extremas son escasas: por eso se agrupan, y la partición debe ser estratificada.
 
 ## Enfoque sugerido
@@ -30,8 +31,8 @@
 ## Contrato del endpoint
 
 - `POST /api/modelos/vino/predecir` · `GET /api/modelos/vino/info`
-- **Entrada (`Entrada` en `router.py`):** Las 12 variables en `snake_case` (`fixed_acidity`, …, `alcohol`, `type`).
-- **Salida:** `prediccion` clase (`baja`/`media`/`alta`) más `probabilidades`.
+- **Entrada (`Entrada` en `router.py`):** ✅ 12 campos obligatorios y validados: `tipo` (`red`/`white`) y las 11 variables fisicoquímicas en `snake_case` (`fixed_acidity`, …, `ph`, `sulphates`, `alcohol`).
+- **Salida:** `prediccion` clase (`baja`/`media`/`alta`) más `probabilidades` de las tres. `texto` avisa si ninguna supera el 50 %.
 - **¿Se ejecuta solo con la voz?** No: el comando abre el formulario.
 
 Cuando definas la entrada, quita `extra="allow"` de `Entrada` y usa `Field`/`Literal` con rangos y valores
@@ -41,8 +42,13 @@ permitidos: de ahí sale el formulario de la interfaz (`esquema_entrada`).
 
 - "calidad del vino"
 - "clasificar vino"
+- "que tan bueno es el vino"
 
 Frases cortas y en minúscula; no deben coincidir con las de otro modelo.
+
+## Resultado (2026-10-09)
+
+Random Forest compacto (100 árboles, 2.9 MB). Prueba (1 066 filas): exactitud 0.594, F1 macro 0.591 frente a 0.437 y 0.203 de la clase mayoritaria; consistente con la validación cruzada (0.595). 94 % de los errores son entre clases vecinas. Eliminar las 1 168 filas duplicadas evita inflar la exactitud ~10 puntos. Detalle en `analisis.md`.
 
 ## Archivos
 
@@ -63,16 +69,16 @@ Frases cortas y en minúscula; no deben coincidir con las de otro modelo.
 Un modelo vale 5 pts (creación) + 1 (aplicación) + 1 (API) solo si cumple **todo** lo siguiente.
 
 **Creación del modelo**
-- [ ] `dataset.csv` disponible y `python -m features.modelo_03_vino.train` corre sin errores
-- [ ] Entendimiento y exploración: estadísticas impresas y al menos 2 figuras en `figuras/`
-- [ ] Modelo en un `Pipeline` (el mismo preprocesamiento en el entrenamiento y en la API)
-- [ ] Evaluación en el conjunto de prueba con las métricas de `specs/modelos_spec.md` y comparación con una línea base
-- [ ] `analisis.md` con las 6 secciones redactadas y al menos una referencia científica que justifique el algoritmo
+- [x] `dataset.csv` disponible y `python -m features.modelo_03_vino.train` corre sin errores
+- [x] Entendimiento y exploración: estadísticas impresas y al menos 2 figuras en `figuras/`
+- [x] Modelo en un `Pipeline` (el mismo preprocesamiento en el entrenamiento y en la API)
+- [x] Evaluación en el conjunto de prueba con las métricas de `specs/modelos_spec.md` y comparación con una línea base
+- [x] `analisis.md` con las 6 secciones redactadas y al menos una referencia científica que justifique el algoritmo
 
 **API REST**
-- [ ] `Entrada` con campos tipados y validados (sin `extra="allow"`)
-- [ ] `texto` de la respuesta en lenguaje natural, listo para que JARVIS lo lea
-- [ ] `test_modelo.py`: predicción válida (200) y entrada inválida (422)
+- [x] `Entrada` con campos tipados y validados (sin `extra="allow"`)
+- [x] `texto` de la respuesta en lenguaje natural, listo para que JARVIS lo lea
+- [x] `test_modelo.py`: predicción válida (200) y entrada inválida (422)
 
 **Aplicación**
 - [ ] Se puede ejecutar desde la interfaz (formulario o comando de voz) y el resultado se muestra y se lee en voz alta
