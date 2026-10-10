@@ -47,6 +47,11 @@ PyWebView (ventana nativa)  ──►  http://127.0.0.1:8000/       interfaz web
   El entrenamiento genera `modelo.joblib`, `metricas.json` y `figuras/`.
 - `train.py` sigue las 6 etapas de la rúbrica: Análisis, Entendimiento, Exploración, Modelo, Evaluación,
   Conclusión. Usa los helpers de `core/entrenamiento.py`. Referencia completa: `modelo_02_autos`.
+- **Notebook de Colab** (extra, no reemplaza a `train.py`): cada modelo tiene `notebook.ipynb`, autocontenido (no importa del repositorio; en Colab se
+  sube solo el `dataset.csv`), con la estructura de `Ejemplo_Plantilla.ipynb` (análisis del problema, hilo conductor, librerías, secciones de
+  entendimiento, exploración y modelo, conclusiones), en español, **sin emojis** y con las salidas guardadas. Se genera con
+  `herramientas/notebooks/modelo_XX_<slug>.py` (ver `herramientas/notebooks/README.md`); sus cifras deben coincidir con `metricas.json`. Lo vigila
+  `backend/tests/test_notebooks.py`.
 - `router.py` de modelo: `MODELO_INFO`, esquema `Entrada` (pydantic) y `POST /predecir` usando
   `core.modelos.predecir_con_pipeline`.
 - Datos crudos grandes o compartidos en `data/`; cada feature guarda su `dataset.csv`.
@@ -62,6 +67,7 @@ PyWebView (ventana nativa)  ──►  http://127.0.0.1:8000/       interfaz web
 | Solo API (desarrollo)      | `cd backend && uvicorn main:app --reload` → `/docs`               |
 | Pruebas                    | `cd backend && pytest`                                            |
 | Entrenar un modelo         | `cd backend && python -m features.modelo_XX_<slug>.train`         |
+| Regenerar un notebook      | `python herramientas/notebooks/modelo_XX_<slug>.py` (necesita `nbclient` e `ipykernel`) |
 | Frontend (desarrollo)      | `cd frontend && npm run dev` (proxy `/api` → `:8000`)             |
 | Frontend con mocks         | `cd frontend && VITE_USAR_MOCKS=true npm run dev`                 |
 | Frontend para escritorio   | `cd frontend && npm run build` (PyWebView sirve `frontend/dist`)  |
