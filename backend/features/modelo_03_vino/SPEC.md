@@ -59,6 +59,7 @@ Random Forest compacto (100 árboles, 2.9 MB). Prueba (1 066 filas): exactitud 0
 | `router.py`      | `MODELO_INFO`, `Entrada` y `POST /predecir`                              |
 | `test_modelo.py` | Pruebas del endpoint con el modelo real                                  |
 | `analisis.md`    | Redacción académica de las 6 etapas (pasa a LaTeX)                       |
+| `notebook.ipynb` | Versión didáctica para Google Colab (extra; no reemplaza a `train.py`)      |
 
 ## Referencias sugeridas
 
