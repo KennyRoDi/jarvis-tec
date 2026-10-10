@@ -66,6 +66,8 @@ if RUTA is None:
 print("Archivo de datos:", RUTA)''')
 
     def guardar(self, carpeta_modelo: str, ejecutar: bool = True) -> Path:
+        for i, celda in enumerate(self.celdas):
+            celda["id"] = f"celda-{i:03d}"  # ids fijos: regenerar no ensucia el diff de git
         nb = nbformat.v4.new_notebook(cells=self.celdas)
         nb.metadata = {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
                        "language_info": {"name": "python"}, "colab": {"provenance": []}}
@@ -74,6 +76,6 @@ print("Archivo de datos:", RUTA)''')
             with tempfile.TemporaryDirectory() as tmp:
                 (Path(tmp) / "sample_data").mkdir()
                 shutil.copy(FEATURES / carpeta_modelo / "dataset.csv", Path(tmp) / "sample_data" / "dataset.csv")
-                NotebookClient(nb, timeout=900, kernel_name="python3", resources={"metadata": {"path": tmp}}).execute()
+                NotebookClient(nb, timeout=900, kernel_name="python3", record_timing=False, resources={"metadata": {"path": tmp}}).execute()
         nbformat.write(nb, destino)
         return destino

@@ -26,7 +26,7 @@ Fusionar en orden #1 → #9; tras cada fusión GitHub redirige el siguiente a `m
 piden cambios en un PR intermedio, hay que rebasar las ramas siguientes.
 
 **Pendiente, en este orden:**
-1. **Los 10 modelos están entrenados** (sin fusionar). Falta la interfaz, voz, visión y LaTeX (punto 4).
+1. **Los 10 modelos están entrenados y cada uno tiene su notebook de Colab** (sin fusionar). Falta la interfaz, voz, visión y LaTeX (punto 4).
 2. **Re-verificar el 05 y el 06 con un subagente independiente**: tras su última revisión cambiaron (05: se quitó el `bmi`, ganó la
    regresión logística, umbrales 0.11 y 0.045; 06: el ALP volvió a entrar y se quitó el sexo); solo se comprobaron con pruebas y mutaciones propias.
 3. **PR de seguimiento** que lleve a los modelos 08, 09 y 03 lo aprendido después (y que mueva `serie.py`, hoy copiado en los modelos 01 y 10, a `core/`) (en el 03, además, quitar `SVC(probability=True)`: el
