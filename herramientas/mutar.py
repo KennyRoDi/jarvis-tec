@@ -4,7 +4,7 @@ from pathlib import Path
 carpeta, inicio, fin = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
 spec = importlib.util.spec_from_file_location("m", Path(__file__).with_name(f"mutaciones_{carpeta}.py")); mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
 base = Path(f"features/{carpeta}")
-originales = {f: (base / f).read_text() for f in ("train.py", "router.py")}
+originales = {f.name: f.read_text() for f in sorted(base.glob("*.py")) if f.name not in ("__init__.py", "test_modelo.py")}  # train, router y módulos auxiliares
 try:
     for archivo, etiqueta, viejo, nuevo in mod.M[inicio:fin]:
         for f, orig in originales.items():  # restaurar AMBOS archivos: una mutación anterior no debe contaminar la siguiente
