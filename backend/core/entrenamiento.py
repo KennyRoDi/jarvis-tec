@@ -83,7 +83,7 @@ def intervalo_bootstrap(y_real, probabilidad, funcion, remuestreos: int = 1000, 
     valores = []
     while len(valores) < remuestreos:
         i = rng.integers(0, len(y), len(y))
-        if len(set(y[i])) == 2:  # hace falta al menos un positivo y un negativo
+        if len(np.unique(y[i])) > 1:  # hace falta más de una clase (al menos un positivo y un negativo)
             valores.append(funcion(y[i], p[i]))
     return [round(float(np.percentile(valores, 2.5)), 4), round(float(np.percentile(valores, 97.5)), 4)]
 

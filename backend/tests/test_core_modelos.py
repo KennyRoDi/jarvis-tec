@@ -93,3 +93,17 @@ def test_intervalo_bootstrap_contiene_el_valor_y_se_ensancha_con_pocos_datos():
     assert ic_grande[0] < roc_auc_score(y1, p1) < ic_grande[1]
     assert (ic_pequeno[1] - ic_pequeno[0]) > 3 * (ic_grande[1] - ic_grande[0])
     assert intervalo_bootstrap(y1, p1, roc_auc_score) == ic_grande, "determinista con la misma semilla"
+
+
+def test_intervalo_bootstrap_usa_percentiles_2_5_y_97_5_y_remuestras_del_tamano_original():
+    """Para la media, el IC del 95 % mide ~3.92 errores estándar (con 5/95 serían 3.29, con remuestras menores, más)."""
+    y = (np.random.default_rng(3).random(400) < 0.3).astype(int)
+    ic = intervalo_bootstrap(y, np.zeros(400), lambda yy, pp: float(yy.mean()))
+    assert (ic[1] - ic[0]) == pytest.approx(3.92 * y.std() / np.sqrt(400), rel=0.12)
+
+
+def test_intervalo_bootstrap_descarta_las_remuestras_de_una_sola_clase():
+    """Con un único positivo, muchas remuestras no lo contienen: sin el descarte, roc_auc_score lanzaría ValueError."""
+    from sklearn.metrics import roc_auc_score
+    ic = intervalo_bootstrap(np.array([1] + [0] * 7), np.linspace(0.1, 0.9, 8), roc_auc_score, remuestreos=200)
+    assert 0 <= ic[0] <= ic[1] <= 1
