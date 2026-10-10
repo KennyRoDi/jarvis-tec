@@ -7,9 +7,9 @@ extrapolación usa el rango de entrenamiento, que es más estrecho (ver analisis
 from pathlib import Path
 
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from core.modelos import RespuestaPrediccion, cargar_artefacto, predecir_con_pipeline
+from core.modelos import RespuestaPrediccion, fuera_de_rango, predecir_con_pipeline
 
 CARPETA = Path(__file__).parent
 
@@ -23,10 +23,11 @@ MODELO_INFO = {
 
 router = APIRouter(prefix="/api/modelos/grasa_corporal", tags=["Modelo 08 · Grasa corporal"])
 
-MARGEN_RANGO = 0.05  # tolerancia (5 % del rango) antes de avisar que se extrapola
-
 
 class Entrada(BaseModel):
+    # Estricta: rechaza campos desconocidos y tipos laxos ("45", true, 45.5 en la edad).
+    model_config = ConfigDict(extra="forbid", strict=True)
+
     age: int = Field(ge=18, le=90, description="Edad en años", examples=[45])
     weight_kg: float = Field(ge=45, le=180, description="Peso en kg", examples=[80.0])
     height_cm: float = Field(ge=145, le=205, description="Estatura en cm", examples=[178.0])
@@ -42,17 +43,6 @@ class Entrada(BaseModel):
     wrist_cm: float = Field(ge=14, le=24, description="Circunferencia de la muñeca (cm)", examples=[18.3])
 
 
-def medidas_fuera_de_rango(carpeta: Path, entrada: dict) -> list[str]:
-    """Variables que caen fuera del rango de entrenamiento (el modelo lineal extrapola mal ahí)."""
-    rango = cargar_artefacto(carpeta, MODELO_INFO["slug"]).get("rango", {})
-    fuera = []
-    for campo, (minimo, maximo) in rango.items():
-        margen = (maximo - minimo) * MARGEN_RANGO
-        if not minimo - margen <= entrada[campo] <= maximo + margen:
-            fuera.append(campo)
-    return fuera
-
-
 @router.post("/predecir", response_model=RespuestaPrediccion)
 def predecir(entrada: Entrada) -> RespuestaPrediccion:
     datos = entrada.model_dump()
@@ -60,6 +50,6 @@ def predecir(entrada: Entrada) -> RespuestaPrediccion:
     valor = round(max(valor, 0.0), 1)  # un porcentaje no puede ser negativo
     texto = (f"Con esas medidas, el porcentaje de grasa corporal estimado es {valor} por ciento. "
              "Es una estimación orientativa, calculada con datos de hombres adultos.")
-    if medidas_fuera_de_rango(CARPETA, datos):
+    if fuera_de_rango(CARPETA, MODELO_INFO["slug"], datos):
         texto += " Atención: alguna medida está fuera del rango de los datos de entrenamiento y el resultado es poco confiable."
     return RespuestaPrediccion(modelo=MODELO_INFO["slug"], prediccion=valor, unidad=MODELO_INFO["unidad"], texto=texto)
