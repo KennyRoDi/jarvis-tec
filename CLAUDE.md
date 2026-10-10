@@ -29,9 +29,9 @@ piden cambios en un PR intermedio, hay que rebasar las ramas siguientes.
 1. **Los 10 modelos están entrenados y cada uno tiene su notebook de Colab** (sin fusionar). Falta la interfaz, voz, visión y LaTeX (punto 4).
 2. **Re-verificar el 05 y el 06 con un subagente independiente**: tras su última revisión cambiaron (05: se quitó el `bmi`, ganó la
    regresión logística, umbrales 0.11 y 0.045; 06: el ALP volvió a entrar y se quitó el sexo); solo se comprobaron con pruebas y mutaciones propias.
-3. **PR de seguimiento** que lleve a los modelos 08, 09 y 03 lo aprendido después (y que mueva `serie.py`, hoy copiado en los modelos 01 y 10, a `core/`) (en el 03, además, quitar `SVC(probability=True)`: el
-   parámetro `probability` está deprecado en scikit-learn 1.9 y emite `FutureWarning`): `entrenar()` pura + prueba
-   `reproduce`, `Entrada` estricta, `core.fuera_de_rango` (el 08 tiene copia local) y control de mutaciones.
+3. **PR de seguimiento #10** (`feature/seguimiento-08-09-03`, base `feature/modelo-10-sp500`): lleva a los modelos 08, 09 y 03 lo aprendido
+   después (`entrenar()` pura + prueba `reproduce`, `Entrada` estricta, `core.fuera_de_rango` y control de mutaciones; en el 03 se quitó
+   `SVC(probability=True)`). **Queda pendiente** mover `serie.py`, copiado hoy en los modelos 01 y 10, a `core/`.
 4. Interfaz (Dev B), voz y visión, y documento LaTeX siguen sin empezar; ver `specs/alcance_spec.md`.
 
 **Procedimiento por modelo** (el que se siguió en 08–05):
@@ -191,17 +191,24 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   en disco, y añadir una prueba marcada `@pytest.mark.reproduce` que lo reejecute en memoria y exija igualdad
   exacta con `metricas.json`, el umbral, el rango y las probabilidades del artefacto. Es lo que atrapa fugas y
   errores dentro del entrenamiento (en el modelo 04 sobrevivían 44 de 74 mutaciones sin ella). Excluir en
-  desarrollo con `pytest -m "not reproduce"`. Pendiente aplicarlo a los modelos 08, 09 y 03.
+  desarrollo con `pytest -m "not reproduce"`. Lo tienen los modelos 03 a 10.
 - `Entrada` estricta (`ConfigDict(extra="forbid", strict=True)`): un nombre de campo mal escrito o `"12"` por `12` no
-  deben aceptarse en silencio (los modelos 08, 09 y 03 aún no lo tienen).
+  deben aceptarse en silencio. Con una fecha, `strict=True` rechaza hasta "2017-09-15" (pydantic valida el cuerpo en modo Python) y el modo laxo
+  acepta enteros como marcas de tiempo: usar `Field(strict=False)` con un `field_validator(mode="before")` que admita solo `AAAA-MM-DD` (modelo 09).
 - Un test transversal comprueba que cada comando de voz se asocia a su propio modelo (`tests/test_api.py`).
 - Los textos para voz no deben contener a la vez las dos conclusiones ("riesgo alto" en un texto de riesgo bajo).
+- **Pruebas de límites con valores literales**: leer los límites desde `Entrada.model_fields` hace que la prueba cambie junto con el código
+  (en el 08, 7 mutaciones de límites sobrevivieron así). Escribir los límites esperados en la prueba. Una prueba de "fecha laxa" debe usar un
+  valor que pasaría de verdad (un entero que sea medianoche UTC y esté dentro del rango), no uno que otra regla ya rechaza.
+- **Una prueba de "no usa la prueba" no puede alterar las etiquetas** si la partición es estratificada (cambia la partición): alterar las
+  medidas de las filas de prueba. Y no ejecutar `pytest` en una carpeta mientras `mutar.py` la está mutando (lee el código mutado).
+- `SVC(probability=...)` vale `"deprecated"` por defecto en scikit-learn 1.9: probar `hasattr(pipeline, "predict_proba")`, no el parámetro.
+  Si la API devuelve probabilidades, la selección solo considera candidatos que las calculan (`elegibles()` en el 03).
 - **Control de mutaciones**: al terminar las pruebas de un modelo, romper a propósito cada protección (umbral de
   aviso, límites de `Entrada`, estratificación, imputación, texto) y comprobar que alguna prueba falla. Las
   pruebas que solo leen el artefacto guardado no detectan cambios en `train.py`: añadir también pruebas
   estructurales sobre `candidatos()` / `dividir()`. Así se detectaron 8 pruebas débiles en el modelo 03.
-- Para avisar de extrapolación usar `core.modelos.fuera_de_rango` y guardar `rango=` en el artefacto (el modelo 08
-  aún tiene una copia local de esa lógica). La matriz de confusión se pide con `metricas_clasificacion(..., orden=...)`.
+- Para avisar de extrapolación usar `core.modelos.fuera_de_rango` y guardar `rango=` en el artefacto (los modelos 03 a 10 la usan). La matriz de confusión se pide con `metricas_clasificacion(..., orden=...)`.
 - **`cross_val_score` con etiquetas de texto**: el scorer `average_precision` falla y devuelve `nan` en silencio.
   Usar `make_scorer(average_precision_score, response_method="predict_proba", pos_label=...)` y siempre
   `error_score="raise"`.
