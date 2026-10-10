@@ -13,10 +13,10 @@ Google Colab: reproduce de forma didáctica lo que hace `train.py`, no lo reempl
 pip install nbclient ipykernel      # solo para regenerar
 python herramientas/notebooks/modelo_08_grasa_corporal.py
 ```
-`nb.py` copia el `dataset.csv` a una carpeta temporal (`sample_data/`), ejecuta el notebook y guarda el resultado con las salidas.
+Los ids de las celdas son fijos y no se guardan tiempos, así que regenerar un notebook no cambia el diff si nada cambió. `nb.py` copia el `dataset.csv` a una carpeta temporal (`sample_data/`), ejecuta el notebook y guarda el resultado con las salidas.
 
 ## Reglas
 - Autocontenido: no importa nada del repositorio (`core`, `features`). `backend/tests/test_notebooks.py` lo comprueba.
 - Español, sin emojis, y el estilo de la plantilla: análisis del problema, hilo conductor, librerías, secciones numeradas, conclusiones.
-- Las cifras deben coincidir con `metricas.json`, salvo el último decimal (las versiones de scikit-learn cambian un poco los bosques). Se ejecutan con scikit-learn 1.6 y pandas 2.2, parecidos a los de Colab.
+- Las salidas guardadas se generaron con las versiones de `requirements.txt` (scikit-learn 1.9, pandas 3) y coinciden con `metricas.json`. También se comprobó que los 10 corren con scikit-learn 1.6 y pandas 2.2, parecidos a los de Colab; con esas versiones el último decimal de algunos modelos de árboles puede cambiar (en el 07, con 56 pacientes de prueba, un poco más).
 - Afirmar en el texto solo lo que muestran las salidas del propio notebook.

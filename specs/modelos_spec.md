@@ -39,7 +39,7 @@ Cada modelo vive en `backend/features/modelo_XX_<slug>/` con estos archivos:
 | 07 | `modelo_07_cirrosis`          | `cirrosis`        | Clasificación multiclase | `Stage`                    | [Kaggle fedesoriano/cirrhosis-prediction-dataset](https://www.kaggle.com/fedesoriano/cirrhosis-prediction-dataset) |
 | 08 | `modelo_08_grasa_corporal`    | `grasa_corporal`  | Regresión                | `BodyFat`                  | [Kaggle fedesoriano/body-fat-prediction-dataset](https://www.kaggle.com/fedesoriano/body-fat-prediction-dataset) ⚠️ |
 | 09 | `modelo_09_aguacate`          | `aguacate`        | Regresión                | `AveragePrice`             | [Kaggle neuromusic/avocado-prices](https://www.kaggle.com/neuromusic/avocado-prices) |
-| 10 | `modelo_10_sp500`             | `sp500`           | Regresión (serie temporal) | `close` del día siguiente | [Kaggle camnugent/sandp500](https://www.kaggle.com/camnugent/sandp500) |
+| 10 | `modelo_10_sp500`             | `sp500`           | Regresión (serie temporal) | retorno logarítmico de la sesión siguiente (el precio es `close`) | [Kaggle camnugent/sandp500](https://www.kaggle.com/camnugent/sandp500) |
 
 ⚠️ En el enunciado los enlaces de *hepatitis* y *masa corporal* están intercambiados; arriba se usan los correctos.
 
@@ -60,4 +60,4 @@ y renombrar el CSV principal a `dataset.csv`.
 | 07 | [cirrosis](../backend/features/modelo_07_cirrosis/SPEC.md)                      | No                           | ✅ entrenado (falta interfaz) |
 | 08 | [grasa_corporal](../backend/features/modelo_08_grasa_corporal/SPEC.md)          | No                           | ✅ entrenado (falta interfaz) |
 | 09 | [aguacate](../backend/features/modelo_09_aguacate/SPEC.md)                      | Sí (valores por defecto)     | ✅ entrenado (falta interfaz) |
-| 10 | [sp500](../backend/features/modelo_10_sp500/SPEC.md)                            | Sí                           | ⏳ |
+| 10 | [sp500](../backend/features/modelo_10_sp500/SPEC.md)                            | Sí                           | ✅ entrenado (falta interfaz) |

@@ -24,7 +24,7 @@ Leyenda: ✅ cumplido · 🟡 estructura lista, falta implementar · ⏳ pendien
 | Sin rostro propio: animación o foto ilustrativa + animación de audio al responder | Núcleo animado + respuesta hablada (TTS) → [frontend](../frontend/SPEC.md) | ⏳ |
 | R1. Plataforma de software para comunicar usuario y máquina (Figura 1)    | App de escritorio PyWebView + interfaz React estilo Jarvis            | 🟡 |
 | R2. API REST con los endpoints necesarios                                 | FastAPI, contrato en [api_rest_spec.md](api_rest_spec.md)             | 🟡 |
-| R3. 10 modelos de la lista proporcionada                                  | [modelos_spec.md](modelos_spec.md) (todos de la lista: no requieren aprobación de dataset) | 🟡 9/10 |
+| R3. 10 modelos de la lista proporcionada                                  | [modelos_spec.md](modelos_spec.md) (todos de la lista: no requieren aprobación de dataset) | 🟡 10/10 |
 | R4. Alternativa con dataset externo (opcional)                            | No se usa                                                             | — |
 
 ## Alcances (entregables de la semana 10)
@@ -33,7 +33,7 @@ Leyenda: ✅ cumplido · 🟡 estructura lista, falta implementar · ⏳ pendien
 |----------------------------------------------------------------------------|--------------------------------------------------------------------------------|--------|
 | A1. Agente inteligente que reconoce el sentimiento en una foto de cámara en tiempo real (frame de video) | Cámara en la interfaz → `POST /api/vision/emocion` (Azure Face + Google Vision) → [vision_facial](../backend/features/vision_facial/SPEC.md) | ⏳ |
 | A2. Agente inteligente que convierte audio a texto y **ejecuta** la instrucción | Micrófono → `POST /api/voz/transcribir` (Google) → `/api/asistente/comando` → `/predecir` | ⏳ |
-| A3. Al menos 10 algoritmos de aprendizaje automático de la lista           | `backend/features/modelo_01 … modelo_10`, cada uno con su `SPEC.md`            | 🟡 9/10 |
+| A3. Al menos 10 algoritmos de aprendizaje automático de la lista           | `backend/features/modelo_01 … modelo_10`, cada uno con su `SPEC.md`            | 🟡 10/10 |
 | A4. Conjunto de comandos asociados a los modelos (ej. JarvisTEC "tipo de cambio para mañana") | `MODELO_INFO["comandos"]` de cada modelo + catálogo en los anexos del documento | 🟡 |
 | A1 y A2 piden **diseñar un modelo de agente**                              | Diseño PEAS y tipo de agente en el documento → [docs_latex](../docs_latex/SPEC.md) | ⏳ |
 | Cámara y micrófono dentro de la app de escritorio                          | `core/escritorio.py` concede `getUserMedia` en Linux (verificado con webcam y micrófono reales). Windows: lo verifica el compañero | 🟡 |

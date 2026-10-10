@@ -1,0 +1,239 @@
+{
+  "metricas": {
+    "horizontes": {
+      "1": {
+        "modelo": {
+          "rmse_relativo_pct": 1.0814,
+          "mape_pct": 0.7481,
+          "acierto_direccion": 0.5467
+        },
+        "persistencia": {
+          "rmse_relativo_pct": 1.0879,
+          "mape_pct": 0.7519
+        },
+        "deriva": {
+          "rmse_relativo_pct": 1.0802,
+          "mape_pct": 0.7465
+        },
+        "siempre_sube": {
+          "acierto_direccion": 0.5579
+        },
+        "cobertura_intervalo_95": {
+          "global": 0.9878,
+          "AAPL": 0.9797,
+          "AMZN": 0.9959,
+          "GOOGL": 0.9837,
+          "MSFT": 0.9919
+        },
+        "cobertura_intervalo_95_por_mitad": [
+          0.9878,
+          0.9878
+        ],
+        "habilidad_frente_a_persistencia": 0.0059,
+        "habilidad_ic95": [
+          -0.001,
+          0.0132
+        ],
+        "habilidad_frente_a_deriva": -0.0011,
+        "habilidad_frente_a_deriva_ic95": [
+          -0.0045,
+          0.0016
+        ],
+        "habilidad_deriva_frente_a_persistencia": 0.007,
+        "habilidad_por_simbolo": {
+          "AAPL": 0.0011,
+          "AMZN": 0.0085,
+          "GOOGL": 0.0065,
+          "MSFT": 0.0072
+        },
+        "por_simbolo_usd": {
+          "AAPL": {
+            "rmse_modelo": 1.761,
+            "rmse_persistencia": 1.764
+          },
+          "AMZN": {
+            "rmse_modelo": 13.607,
+            "rmse_persistencia": 13.736
+          },
+          "GOOGL": {
+            "rmse_modelo": 9.377,
+            "rmse_persistencia": 9.452
+          },
+          "MSFT": {
+            "rmse_modelo": 0.729,
+            "rmse_persistencia": 0.735
+          }
+        },
+        "n_origenes": 246
+      },
+      "3": {
+        "modelo": {
+          "rmse_relativo_pct": 1.8925,
+          "mape_pct": 1.3905,
+          "acierto_direccion": 0.6047
+        },
+        "persistencia": {
+          "rmse_relativo_pct": 1.9255,
+          "mape_pct": 1.4224
+        },
+        "deriva": {
+          "rmse_relativo_pct": 1.8869,
+          "mape_pct": 1.3809
+        },
+        "siempre_sube": {
+          "acierto_direccion": 0.6199
+        },
+        "cobertura_intervalo_95": {
+          "global": 0.9878,
+          "AAPL": 0.9837,
+          "AMZN": 0.9837,
+          "GOOGL": 0.9959,
+          "MSFT": 0.9878
+        },
+        "cobertura_intervalo_95_por_mitad": [
+          0.9919,
+          0.9837
+        ],
+        "habilidad_frente_a_persistencia": 0.0171,
+        "habilidad_ic95": [
+          -0.0005,
+          0.0346
+        ],
+        "habilidad_frente_a_deriva": -0.003,
+        "habilidad_frente_a_deriva_ic95": [
+          -0.011,
+          0.0038
+        ],
+        "habilidad_deriva_frente_a_persistencia": 0.0201,
+        "habilidad_por_simbolo": {
+          "AAPL": 0.0044,
+          "AMZN": 0.0192,
+          "GOOGL": 0.0175,
+          "MSFT": 0.0325
+        },
+        "por_simbolo_usd": {
+          "AAPL": {
+            "rmse_modelo": 3.057,
+            "rmse_persistencia": 3.073
+          },
+          "AMZN": {
+            "rmse_modelo": 25.37,
+            "rmse_persistencia": 25.903
+          },
+          "GOOGL": {
+            "rmse_modelo": 17.134,
+            "rmse_persistencia": 17.506
+          },
+          "MSFT": {
+            "rmse_modelo": 1.134,
+            "rmse_persistencia": 1.177
+          }
+        },
+        "n_origenes": 246
+      },
+      "7": {
+        "modelo": {
+          "rmse_relativo_pct": 3.0263,
+          "mape_pct": 2.2879,
+          "acierto_direccion": 0.6433
+        },
+        "persistencia": {
+          "rmse_relativo_pct": 3.1378,
+          "mape_pct": 2.3981
+        },
+        "deriva": {
+          "rmse_relativo_pct": 3.0299,
+          "mape_pct": 2.2846
+        },
+        "siempre_sube": {
+          "acierto_direccion": 0.6474
+        },
+        "cobertura_intervalo_95": {
+          "global": 0.9827,
+          "AAPL": 0.9797,
+          "AMZN": 0.9715,
+          "GOOGL": 0.9797,
+          "MSFT": 1.0
+        },
+        "cobertura_intervalo_95_por_mitad": [
+          0.9939,
+          0.9715
+        ],
+        "habilidad_frente_a_persistencia": 0.0355,
+        "habilidad_ic95": [
+          0.0001,
+          0.0699
+        ],
+        "habilidad_frente_a_deriva": 0.0012,
+        "habilidad_frente_a_deriva_ic95": [
+          -0.0059,
+          0.0092
+        ],
+        "habilidad_deriva_frente_a_persistencia": 0.0344,
+        "habilidad_por_simbolo": {
+          "AAPL": 0.0083,
+          "AMZN": 0.0452,
+          "GOOGL": 0.0287,
+          "MSFT": 0.0703
+        },
+        "por_simbolo_usd": {
+          "AAPL": {
+            "rmse_modelo": 4.96,
+            "rmse_persistencia": 5.015
+          },
+          "AMZN": {
+            "rmse_modelo": 39.278,
+            "rmse_persistencia": 41.295
+          },
+          "GOOGL": {
+            "rmse_modelo": 30.484,
+            "rmse_persistencia": 31.535
+          },
+          "MSFT": {
+            "rmse_modelo": 1.806,
+            "rmse_persistencia": 1.953
+          }
+        },
+        "n_origenes": 246
+      }
+    },
+    "modelo": "ridge",
+    "comparacion_cv": {
+      "persistencia (línea base)": {
+        "cv_rmse_retorno": 0.01587,
+        "cv_rmse_desv": 0.00236
+      },
+      "deriva (línea base)": {
+        "cv_rmse_retorno": 0.01586,
+        "cv_rmse_desv": 0.00237
+      },
+      "ridge": {
+        "cv_rmse_retorno": 0.01586,
+        "cv_rmse_desv": 0.00238
+      },
+      "random forest": {
+        "cv_rmse_retorno": 0.01594,
+        "cv_rmse_desv": 0.00243
+      },
+      "gradient boosting": {
+        "cv_rmse_retorno": 0.01597,
+        "cv_rmse_desv": 0.00248
+      }
+    },
+    "mejor_linea_base_cv": "deriva (línea base)",
+    "n_entrenamiento": 3904,
+    "n_prueba": 252,
+    "sigma_retorno_diario": {
+      "AAPL": 0.01517,
+      "MSFT": 0.01518,
+      "AMZN": 0.01917,
+      "GOOGL": 0.01444
+    },
+    "fecha_inicio_prueba": "2017-02-08",
+    "retorno_medio_dia_entrenamiento": 0.00086
+  },
+  "entrada_ejemplo": {
+    "simbolo": "AAPL",
+    "dias_adelante": 1
+  }
+}

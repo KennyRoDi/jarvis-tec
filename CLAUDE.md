@@ -20,16 +20,16 @@ El desarrollo de los modelos se pausó por límite de cuota. **Antes de seguir, 
 | #6 | `feature/modelo-06-hepatitis`     | `feature/modelo-05-acv`           | 06 hepatitis      |
 | #7 | `feature/modelo-07-cirrosis`      | `feature/modelo-06-hepatitis`     | 07 cirrosis       |
 | #8 | `feature/modelo-01-bitcoin`       | `feature/modelo-07-cirrosis`      | 01 bitcoin        |
+| #9 | `feature/modelo-10-sp500`         | `feature/modelo-01-bitcoin`       | 10 sp500          |
 
-Fusionar en orden #1 → #8; tras cada fusión GitHub redirige el siguiente a `main` (o cambiar la base a mano). Si se
+Fusionar en orden #1 → #9; tras cada fusión GitHub redirige el siguiente a `main` (o cambiar la base a mano). Si se
 piden cambios en un PR intermedio, hay que rebasar las ramas siguientes.
 
 **Pendiente, en este orden:**
-1. **Modelo 10 sp500**, en su rama `feature/modelo-10-sp500` creada desde `feature/modelo-01-bitcoin` y con PR apilado. Leer el `SPEC.md`:
-   trae las trampas ya verificadas. Es una serie de tiempo: seguir el patrón del 01 (retorno logarítmico, predicción recursiva, persistencia como referencia).
+1. **Los 10 modelos están entrenados y cada uno tiene su notebook de Colab** (sin fusionar). Falta la interfaz, voz, visión y LaTeX (punto 4).
 2. **Re-verificar el 05 y el 06 con un subagente independiente**: tras su última revisión cambiaron (05: se quitó el `bmi`, ganó la
    regresión logística, umbrales 0.11 y 0.045; 06: el ALP volvió a entrar y se quitó el sexo); solo se comprobaron con pruebas y mutaciones propias.
-3. **PR de seguimiento** que lleve a los modelos 08, 09 y 03 lo aprendido después (en el 03, además, quitar `SVC(probability=True)`: el
+3. **PR de seguimiento** que lleve a los modelos 08, 09 y 03 lo aprendido después (y que mueva `serie.py`, hoy copiado en los modelos 01 y 10, a `core/`) (en el 03, además, quitar `SVC(probability=True)`: el
    parámetro `probability` está deprecado en scikit-learn 1.9 y emite `FutureWarning`): `entrenar()` pura + prueba
    `reproduce`, `Entrada` estricta, `core.fuera_de_rango` (el 08 tiene copia local) y control de mutaciones.
 4. Interfaz (Dev B), voz y visión, y documento LaTeX siguen sin empezar; ver `specs/alcance_spec.md`.
@@ -133,7 +133,7 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
 | 6  | 06 hepatitis       | Multiclase muy desbalanceada, clase de 7 filas | ✅ (2026-10-09) |
 | 7  | 07 cirrosis        | 418 filas, 106 casi vacías, fuga de información, 4 etapas desiguales | ✅ (2026-10-09) |
 | 8  | 01 bitcoin         | Serie temporal: fechas, `-`, partición temporal, rezagos, predicción recursiva | ✅ (2026-10-10) |
-| 9  | 10 sp500           | Serie temporal multi-símbolo; interpretar el símbolo desde la voz | ⏳ **siguiente** |
+| 9  | 10 sp500           | Serie temporal multi-símbolo; interpretar el símbolo desde la voz | ✅ (2026-10-10) |
 
 **Lecciones del modelo 08 que aplican a los demás:**
 - Seleccionar el algoritmo solo con validación cruzada sobre el entrenamiento y usar el conjunto de prueba una vez.
@@ -264,7 +264,7 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Modelo 06 hepatitis          | ✅ entrenado (RF, F1 macro prueba 0.580 / CV 0.635, 11 variables con ALP y sin sexo); falta interfaz |
 | Modelo 07 cirrosis           | ✅ entrenado (RF, F1 macro prueba 0.465 / CV 0.460, solo pacientes completos); falta interfaz |
 | Modelo 01 bitcoin            | ✅ entrenado (Ridge ≈ deriva, sin mejora demostrable sobre la persistencia; intervalo 95 % con cobertura 96–97 %); falta interfaz |
-| Modelo 10 sp500              | ⏳ plantilla con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
+| Modelo 10 sp500              | ✅ entrenado (Ridge ≈ deriva compartido por 4 símbolos; su ventaja sobre la persistencia es solo la deriva); falta interfaz |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |
 | Comandos de voz → modelo     | 🟡 reconoce el modelo; faltan parámetros y el tono según la emoción   |
