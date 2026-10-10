@@ -89,7 +89,7 @@ cd frontend && npm install
 | 06 | Tipo de hepatitis C                      | Clasificación  | Pendiente     |
 | 07 | Etapa de cirrosis                        | Clasificación  | Pendiente     |
 | 08 | Porcentaje de grasa corporal             | Regresión      | ✅ R² = 0.56 (CV 0.70) |
-| 09 | Precio del aguacate                      | Regresión      | Pendiente     |
+| 09 | Precio del aguacate                      | Regresión      | ✅ R² = 0.41 (temporal) |
 | 10 | Precio de acciones del S&P 500           | Regresión      | Pendiente     |
 
 Fuentes de datos, variables objetivo y comandos de voz de cada modelo: [`specs/modelos_spec.md`](specs/modelos_spec.md).
