@@ -43,11 +43,11 @@ class Entrada(BaseModel):
     bilirubin: float = Field(ge=0.1, le=40, description="Bilirrubina sérica (mg/dL)", examples=[1.4])
     cholesterol: float = Field(ge=100, le=2200, description="Colesterol sérico (mg/dL)", examples=[310.0])
     albumin: float = Field(ge=1.5, le=5.5, description="Albúmina (g/dL)", examples=[3.5])
-    copper: float = Field(ge=3, le=800, description="Cobre en orina (µg/día)", examples=[74.0])
+    copper: float = Field(ge=3, le=800, description="Cobre en orina de 24 horas (µg/día)", examples=[74.0])
     alk_phos: float = Field(ge=200, le=18000, description="Fosfatasa alcalina (U/L)", examples=[1277.0])
-    sgot: float = Field(ge=20, le=600, description="SGOT/AST (U/mL)", examples=[116.0])
+    sgot: float = Field(ge=20, le=600, description="SGOT/AST (U/L)", examples=[116.0])
     tryglicerides: float = Field(ge=25, le=800, description="Triglicéridos (mg/dL)", examples=[108.0])
-    platelets: float = Field(ge=40, le=700, description="Plaquetas (miles por mL)", examples=[257.0])
+    platelets: float = Field(ge=40, le=700, description="Plaquetas (10³/µL, miles por microlitro)", examples=[257.0])
     prothrombin: float = Field(ge=7, le=22, description="Tiempo de protrombina (segundos)", examples=[10.6])
 
 

@@ -12,7 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from core.modelos import REGISTRO, cargar_artefacto, leer_metricas
 from features.modelo_07_cirrosis.router import CARPETA, ETAPAS, Entrada
 from features.modelo_07_cirrosis.train import (CATEGORICAS, NUMERICAS, OBJETIVO, ORDEN, SOLO_EN_EXPERIMENTOS, VARIABLES, candidatos,
-                                                cargar_datos, casos_completos, dividir, entrenar, f1_macro_de, metricas_ordinales, por_clase)
+                                                cargar_datos, casos_completos, dividir, entender, entrenar, explorar, f1_macro_de, metricas_ordinales, por_clase)
 
 URL = "/api/modelos/cirrosis/predecir"
 ENTRADA = {"age": 50.0, "sex": "F", "ascites": "N", "hepatomegaly": "Y", "spiders": "N", "edema": "N", "bilirubin": 1.4,
@@ -294,3 +294,59 @@ def test_info_incluye_metricas_esquema_y_ejemplo_valido(cliente):
 @entrenado
 def test_el_artefacto_no_es_excesivo():
     assert (CARPETA / "modelo.joblib").stat().st_size < 5_000_000
+
+
+# --- Unidades, avisos, bordes del aviso de rango y contrato OpenAPI ---
+
+@pytest.mark.parametrize("campo, unidad", [
+    ("age", "años"), ("bilirubin", "mg/dL"), ("cholesterol", "mg/dL"), ("albumin", "g/dL"), ("copper", "µg/día"),
+    ("alk_phos", "U/L"), ("sgot", "U/L"), ("tryglicerides", "mg/dL"), ("platelets", "10³/µL"), ("prothrombin", "segundos"),
+])
+def test_cada_campo_documenta_su_unidad(campo, unidad):
+    """SGOT va en U/L y las plaquetas en 10³/µL (la revisión independiente corrigió U/mL y 'miles por mL')."""
+    assert unidad in Entrada.model_json_schema()["properties"][campo]["description"]
+
+
+@entrenado
+@pytest.mark.parametrize("campo", ["age", "bilirubin"])
+def test_el_aviso_de_rango_empieza_justo_pasado_el_margen_del_5_por_ciento(cliente, campo):
+    minimo, maximo = cargar_artefacto(CARPETA, "cirrosis")["rango"][campo]
+    margen = (maximo - minimo) * 0.05
+    adentro, afuera = {**ENTRADA, campo: maximo + margen * 0.9}, {**ENTRADA, campo: maximo + margen * 1.1}
+    assert "poco confiable" not in cliente.post(URL, json=adentro).json()["texto"]
+    assert "poco confiable" in cliente.post(URL, json=afuera).json()["texto"]
+
+
+@entrenado
+def test_el_aviso_menciona_la_biopsia_y_que_la_estimacion_puede_equivocarse(cliente):
+    texto = cliente.post(URL, json=ENTRADA).json()["texto"]
+    assert "se determina por biopsia" in texto and "puede equivocarse por una etapa o más" in texto
+
+
+def test_el_contrato_openapi_declara_la_respuesta_de_prediccion(cliente):
+    esquema = cliente.get("/openapi.json").json()["paths"][URL]["post"]["responses"]["200"]["content"]["application/json"]["schema"]
+    assert esquema["$ref"].endswith("RespuestaPrediccion")
+    assert "cirrosis" in REGISTRO["cirrosis"].info["nombre"].lower()
+
+
+def test_entender_describe_el_bloque_fuera_del_ensayo_y_los_pacientes_completos(capsys):
+    entender(cargar_datos())
+    salida = capsys.readouterr().out
+    assert "Pacientes con etapa: 412 | con las 15 variables: 276 | incompletos: 136" in salida
+    assert "Bloque de 100 pacientes fuera del ensayo" in salida and "{1: 0.05, 2: 0.25, 3: 0.35, 4: 0.35}" in salida
+    assert "{1: 2644.0, 2: 2409.5, 3: 1810.0, 4: 1207.0}" in salida
+
+
+def test_explorar_genera_las_figuras_del_analisis(tmp_path):
+    explorar(cargar_datos(), tmp_path)
+    assert sorted(p.name for p in tmp_path.glob("*.png")) == ["etapas.png", "laboratorio_por_etapa.png", "seguimiento_posterior.png", "signos_por_etapa.png"]
+
+
+@entrenado
+def test_el_experimento_de_quitar_cada_variable_cubre_las_15_y_no_hay_ninguna_decisiva():
+    """Las diferencias son menores que la desviación entre pliegues (~0.06): el modelo reparte su información entre variables redundantes."""
+    m = leer_metricas(CARPETA)["metricas"]
+    e = m["experimento_sin_cada_variable"]
+    assert set(e["diferencia_al_quitar"]) == set(VARIABLES)
+    assert e["cv_f1_macro_15_variables"] == m["experimento_variables"]["15 (todas las de la consulta inicial)"]["cv_f1_macro"]
+    assert max(abs(v) for v in e["diferencia_al_quitar"].values()) < 0.05

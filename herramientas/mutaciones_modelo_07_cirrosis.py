@@ -40,4 +40,10 @@ M = [
  (T, "ajuste final con entrenamiento+prueba", "pipeline = candidatos()[ganador].fit(X_train, y_train)\n", "pipeline = candidatos()[ganador].fit(completos[VARIABLES], completos[OBJETIVO])\n"),
  (T, "experimento sin pacientes incompletos", "incompletos = df[~df.index.isin(df.dropna(subset=VARIABLES).index)]", "incompletos = df.iloc[:0]"),
  (T, "F1 micro en lugar de macro", 'f1_score(y, pred, labels=ORDEN, average="macro", zero_division=0)', 'f1_score(y, pred, labels=ORDEN, average="micro", zero_division=0)'),
+ (R, "SGOT en U/mL", 'description="SGOT/AST (U/L)"', 'description="SGOT/AST (U/mL)"'),
+ (R, "plaquetas en miles por mL", 'description="Plaquetas (10³/µL, miles por microlitro)"', 'description="Plaquetas (miles por mL)"'),
+ (R, "sin la frase de que puede equivocarse", "esta estimación puede equivocarse por una etapa o más.", "esta estimación es fiable."),
+ (R, "sin response_model", "@router.post(\"/predecir\", response_model=RespuestaPrediccion)", "@router.post(\"/predecir\")"),
+ (T, "entender con el bloque mal definido", 'bloque = df[df["ascites"].isna()]', 'bloque = df[df["ascites"].notna()]'),
+ (T, "explorar sin la figura de etapas", 'guardar_figura(figuras, "etapas")', "pass"),
 ]

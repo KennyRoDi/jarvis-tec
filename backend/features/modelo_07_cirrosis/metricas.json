@@ -215,6 +215,26 @@
         },
         "pacientes_incompletos": 136
       }
+    },
+    "experimento_sin_cada_variable": {
+      "cv_f1_macro_15_variables": 0.3978,
+      "diferencia_al_quitar": {
+        "age": -0.0255,
+        "bilirubin": 0.0027,
+        "cholesterol": -0.0052,
+        "albumin": -0.0023,
+        "copper": 0.0016,
+        "alk_phos": 0.0083,
+        "sgot": -0.0246,
+        "tryglicerides": -0.0161,
+        "platelets": 0.0043,
+        "prothrombin": 0.0127,
+        "sex": 0.0022,
+        "ascites": -0.0013,
+        "hepatomegaly": -0.0205,
+        "spiders": 0.0018,
+        "edema": 0.0015
+      }
     }
   },
   "entrada_ejemplo": {

@@ -238,6 +238,17 @@ def entrenar(df: pd.DataFrame, figuras: Path | None = None, imprimir: bool = Tru
         log(f"  {nombre:20s} solo completos {solo:.3f} ± {ds:.3f} | con {len(incompletos)} incompletos imputados {con:.3f} ± {dc:.3f}")
     metricas["experimento_pacientes_incompletos"] = experimento_inc
 
+    # Experimento 3: ¿qué variables usa realmente el modelo? F1 macro (regresión logística, validación cruzada 5 × 4, solo
+    # entrenamiento) quitando una variable cada vez. Las medianas por etapa describen los datos; esto mide lo que el modelo usa.
+    completa = cross_val_score(armar(LogisticRegression(max_iter=5000, class_weight="balanced")), X_train, y_train, cv=validacion, **CV).mean()
+    sin_cada = {}
+    for variable in VARIABLES:
+        cols = [v for v in VARIABLES if v != variable]
+        f1 = cross_val_score(armar(LogisticRegression(max_iter=5000, class_weight="balanced"), cols), train[cols], y_train, cv=validacion, **CV).mean()
+        sin_cada[variable] = round(float(f1 - completa), 4)  # diferencia respecto de las 15 variables (negativa = la variable ayuda)
+    metricas["experimento_sin_cada_variable"] = {"cv_f1_macro_15_variables": round(float(completa), 4), "diferencia_al_quitar": sin_cada}
+    log("  Diferencia de F1 macro al quitar cada variable:", {k: v for k, v in sorted(sin_cada.items(), key=lambda kv: kv[1])})
+
     return {
         "pipeline": pipeline, "metricas": metricas,
         "rango": {c: [float(X_train[c].min()), float(X_train[c].max())] for c in NUMERICAS},  # rango visto en entrenamiento
@@ -252,7 +263,7 @@ def main() -> None:
     explorar(df, figuras)
     r = entrenar(df, figuras)
     guardar_modelo(CARPETA, r["pipeline"], r["metricas"], entrada_ejemplo=r["entrada_ejemplo"], variables=VARIABLES, rango=r["rango"])
-    print("\nMétricas:", {k: v for k, v in r["metricas"].items() if k not in ("comparacion_cv", "experimento_variables", "experimento_pacientes_incompletos", "por_clase", "oof_entrenamiento", "ic95")})
+    print("\nMétricas:", {k: v for k, v in r["metricas"].items() if k not in ("comparacion_cv", "experimento_variables", "experimento_pacientes_incompletos", "experimento_sin_cada_variable", "por_clase", "oof_entrenamiento", "ic95")})
     # 6. Conclusión: ver analisis.md
 
 
