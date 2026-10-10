@@ -31,14 +31,20 @@ conjunto está declarado como confidencial**, por lo que no se conoce la poblaci
 **Valores faltantes informativos.** Hay 201 valores nulos en `bmi` (3.9 %). No son aleatorios: **19.9 % de los
 pacientes sin `bmi` tuvo un ACV, frente a 4.3 % de quienes sí lo tienen** (40 de los 249 casos positivos carecen de
 `bmi`). Los datos faltantes que dependen del resultado son un mecanismo problemático [Little2019]. Un indicador de
-"`bmi` faltante" subiría el AUC de validación cruzada de 0.842 a 0.854, pero ese indicador es un artefacto de la
-recolección y **no es utilizable**: la aplicación siempre solicita el IMC. Por eso se imputa con la mediana, dentro
-del `Pipeline`, y el indicador no se incluye en el modelo.
+"`bmi` faltante" subiría el AUC de validación cruzada de 0.842 a 0.855, pero es un artefacto de la recolección y
+**no es utilizable**: la aplicación siempre solicita los datos completos.
+
+**Hallazgo de la verificación: el artefacto se filtraba por la imputación.** En una primera versión se imputaba el
+`bmi` con la mediana y se usaba un Random Forest. Ese modelo obtenía un AUC de validación cruzada de 0.8455, pero
+al excluir el `bmi` bajaba a 0.8347: el árbol aislaba el pico de valores imputados (28.0) y "descubría" que el `bmi`
+faltante predice el ACV, sin que nadie lo hubiera incluido. Todo el aporte medible del `bmi` era ese artefacto
+(con la regresión logística, agregarlo no cambia nada: 0.8418 contra 0.8421). Por eso **el `bmi` se excluye del modelo**.
 
 **Observaciones sobre otras variables:**
 - Una sola fila tiene `gender = Other` y no presenta ACV; el género casi no discrimina (4.7 % en mujeres, 5.1 % en
   hombres).
-- `smoking_status = Unknown` corresponde en 80 % de los casos a menores de edad: no equivale a "no fuma".
+- `smoking_status = Unknown` ocurre en 80 % de los menores de 18 años (y solo 44 % de los `Unknown` son menores): es
+  una categoría de "no registrado" y no equivale a "no fuma".
 - `ever_married` y `work_type = children` son sustitutos de la edad (correlación de 0.68 entre edad y estado civil).
 - La edad tiene valores fraccionarios para los lactantes (mínimo 0.08 años).
 
@@ -64,20 +70,21 @@ elección de variables y del modelo y los umbrales se hicieron solo con el entre
 **Qué variables hacen falta.** Se compararon conjuntos de variables con regresión logística y validación cruzada
 (5 particiones × 4 repeticiones, solo entrenamiento):
 
-| Variables                                           | AUC ROC (validación cruzada) |
-|-----------------------------------------------------|------------------------------|
-| 10 (todas)                                          | 0.8374 ± 0.0193              |
-| 9 (sin género)                                      | 0.8384 ± 0.0187              |
-| **5 (edad, hipertensión, enfermedad cardíaca, glucosa, IMC)** | **0.8418 ± 0.0200**  |
-| 1 (solo la edad)                                    | 0.8341 ± 0.0217              |
-| 5 + indicador de `bmi` faltante (artefacto, no se usa) | 0.8544 ± 0.0183           |
+| Variables                                                  | AUC ROC (validación cruzada) |
+|------------------------------------------------------------|------------------------------|
+| 10 (todas)                                                 | 0.8374 ± 0.0193              |
+| 9 (sin género)                                             | 0.8384 ± 0.0187              |
+| 5 (las 4 elegidas + `bmi` imputado)                        | 0.8418 ± 0.0200              |
+| **4 (edad, hipertensión, enfermedad cardíaca, glucosa)**   | **0.8421 ± 0.0202**          |
+| 1 (solo la edad)                                           | 0.8341 ± 0.0217              |
+| 4 + indicador de `bmi` faltante (artefacto, no se usa)     | 0.8550 ± 0.0186              |
 
-**La edad sola ya alcanza 0.834.** Las otras cuatro variables clínicas aportan unas 0.008 unidades de AUC, menos
-que la desviación entre pliegues (0.02), y cinco variables rinden igual o mejor que diez. Se adoptan las **5
-variables clínicas**: el formulario es corto, se evitan datos sensibles innecesarios (género) y variables que son
-solo sustitutos de la edad (estado civil, tipo de trabajo).
+**La edad sola ya alcanza 0.834.** Las otras tres variables aportan unas 0.008 unidades de AUC, menos que la
+desviación entre pliegues (0.02), y cuatro variables rinden igual o mejor que diez. Se adoptan las **4 variables
+clínicas**: el formulario es corto, se evitan datos sensibles innecesarios (género), variables que son solo
+sustitutos de la edad (estado civil, tipo de trabajo) y el `bmi` por lo explicado en la sección 2.
 
-**Candidatos.** Cada uno es un `Pipeline` (imputación por la mediana, escalado y codificación *one-hot*):
+**Candidatos.** Cada uno es un `Pipeline` (escalado de las numéricas y codificación *one-hot* de las categóricas):
 
 | Candidato              | Justificación                                                                   |
 |------------------------|---------------------------------------------------------------------------------|
@@ -90,13 +97,15 @@ solo sustitutos de la edad (estado civil, tipo de trabajo).
 estar calibrada [VanCalster2019]. El desbalance se trata con los umbrales.
 
 **Selección.** Solo con el conjunto de entrenamiento, mediante validación cruzada estratificada repetida (5 × 4)
-con el AUC ROC [Fawcett2006]. El modelo elegido es **Random Forest**. Los hiperparámetros se fijaron a priori, sin
-búsqueda ni ajuste con la prueba.
+con el AUC ROC [Fawcett2006]. El modelo elegido es la **regresión logística**. Los hiperparámetros de los modelos
+de árboles se fijaron a priori, sin búsqueda ni ajuste con la prueba. Con la edad estandarizada, el coeficiente de
+la edad (+1.54) es entre 6 y 10 veces mayor que el de la glucosa (+0.18), la hipertensión (±0.24) y la enfermedad
+cardíaca (±0.14): la edad domina el modelo.
 
 **Dos umbrales**, calculados con predicciones fuera de muestra del entrenamiento:
-- **Umbral F1 = 0.14**: maximiza el F1 de la clase positiva. Define la clase "Yes" (riesgo alto).
-- **Umbral de sensibilidad = 0.06**: el mayor umbral con el que se detecta al menos el 80 % de los casos. Por
-  debajo de él el riesgo es bajo; entre 0.06 y 0.14, moderado. Es el criterio habitual de un tamizaje, en el que
+- **Umbral F1 = 0.11**: maximiza el F1 de la clase positiva. Define la clase "Yes" (riesgo alto).
+- **Umbral de sensibilidad = 0.045**: el mayor umbral con el que se detecta al menos el 80 % de los casos. Por
+  debajo de él el riesgo es bajo; entre 0.045 y 0.11, moderado. Es el criterio habitual de un tamizaje, en el que
   importa no dejar casos sin detectar.
 
 ## 5. Evaluación (1 pt)
@@ -106,58 +115,77 @@ búsqueda ni ajuste con la prueba.
 | Modelo                 | AUC ROC (media ± desv.) | AUC PR |
 |------------------------|--------------------------|--------|
 | Tasa base (línea base) | 0.500 ± 0.000            | 0.049  |
-| Regresión logística    | 0.8418 ± 0.0200          | 0.189  |
-| **Random Forest**      | **0.8455 ± 0.0185**      | 0.196  |
-| Gradient Boosting      | 0.8401 ± 0.0205          | 0.209  |
+| **Regresión logística**| **0.8421 ± 0.0202**      | 0.189  |
+| Random Forest          | 0.8347 ± 0.0194          | 0.173  |
+| Gradient Boosting      | 0.8295 ± 0.0204          | 0.169  |
 
-Los tres modelos no se distinguen entre sí (diferencias de 0.002 a 0.005 con desviaciones de 0.02).
+Las diferencias entre los tres modelos (0.007 a 0.013) son menores que la desviación entre pliegues (0.02): no son
+concluyentes. Se elige la regresión logística por tener el valor más alto y ser la más simple.
 
 **Conjunto de prueba (1 022 pacientes, 50 con ACV).** Con tan pocos positivos las métricas son muy ruidosas, por lo que
 se acompañan de **intervalos de confianza del 95 % por bootstrap** (1 000 remuestreos) [Efron1993]:
 
 | Métrica                          | Valor  | IC 95 %          | Referencia            |
 |----------------------------------|--------|------------------|-----------------------|
-| AUC ROC                          | 0.838  | 0.780 – 0.892    | 0.500                 |
-| AUC PR                           | 0.295  | 0.185 – 0.424    | 0.049 (azar)          |
+| AUC ROC                          | 0.840  | 0.780 – 0.895    | 0.500                 |
+| AUC PR                           | 0.262  | 0.174 – 0.370    | 0.049 (azar)          |
 | Brier (menor es mejor)           | 0.041  | —                | 0.047 (tasa base)     |
 
 **Efecto del umbral** (prueba):
 
-| Umbral                | Exactitud | Precisión | Recall (IC 95 %)        | F1    | Matriz [[TN, FP], [FN, TP]] |
-|-----------------------|-----------|-----------|-------------------------|-------|------------------------------|
-| 0.50                  | 0.951     | 0.000     | **0.000**               | 0.000 | [[972, 0], [50, 0]]          |
-| **0.14 (F1, riesgo alto)** | 0.892 | 0.227    | 0.500 (0.354 – 0.655)   | 0.313 | [[887, 85], [25, 25]]        |
-| 0.06 (sensibilidad)   | 0.773     | 0.153     | **0.800** (0.686 – 0.911) | 0.256 | [[750, 222], [10, 40]]       |
+| Umbral                     | Exactitud | Precisión | Recall (IC 95 %)          | F1    | Matriz [[TN, FP], [FN, TP]] |
+|----------------------------|-----------|-----------|---------------------------|-------|------------------------------|
+| 0.50                       | 0.951     | 0.000     | **0.000**                 | 0.000 | [[972, 0], [50, 0]]          |
+| **0.11 (F1, riesgo alto)** | 0.861     | 0.205     | 0.640 (0.500 – 0.769)     | 0.311 | [[848, 124], [18, 32]]       |
+| 0.045 (sensibilidad)       | 0.725     | 0.131     | **0.820** (0.708 – 0.926) | 0.226 | [[700, 272], [9, 41]]        |
 
 Con el umbral convencional de 0.5 la **exactitud es 95.1 %, igual a la de predecir siempre "no"**, y el modelo no
-detecta ningún caso: es el ejemplo de por qué la exactitud no sirve aquí. Con el umbral de 0.14 se detecta la mitad
-de los casos y la precisión (22.7 %) es 4.6 veces la tasa base (4.9 %). Con el umbral de sensibilidad se detectan
-40 de los 50 casos (80 %), a costa de señalar como de riesgo moderado o alto a 262 pacientes, de los cuales 222
-no tuvieron un ACV.
+detecta ningún caso: es el ejemplo de por qué la exactitud no sirve aquí. Con el umbral de 0.11 se detectan 32 de 50
+casos y la precisión (20.5 %) es 4.2 veces la tasa base (4.9 %). Con el umbral de sensibilidad se detectan 41 de los
+50 casos, a costa de señalar como de riesgo moderado o alto a 313 pacientes, de los cuales 272 no tuvieron un ACV.
 
-**Calibración** (`figuras/evaluacion.png`): las probabilidades predichas coinciden con las frecuencias reales; por
-ejemplo, donde el modelo predice en promedio 5.2 % la tasa real es 3.4 %, y donde predice 15.1 %, 17.1 %. Con
-solo 50 positivos, los tramos extremos son inestables [VanCalster2019].
+**Niveles de riesgo en la prueba:**
+
+| Nivel                        | Pacientes | Con ACV | Tasa real |
+|------------------------------|-----------|---------|-----------|
+| Bajo (p < 0.045)             | 709       | 9       | 1.3 %     |
+| Moderado (0.045 ≤ p < 0.11)  | 157       | 9       | 5.7 %     |
+| Alto (p ≥ 0.11)              | 156       | 32      | 20.5 %    |
+
+**Los umbrales y el recall son sensibles al azar.** Con la misma partición, al cambiar solo la semilla de los
+pliegues que se usan para calcular los umbrales, el umbral F1 varió entre 0.10 y 0.14 (la curva de F1 es una
+meseta: elegir 0.11 es casi arbitrario dentro de ese rango), y el recall de prueba con él, entre 0.58 y 0.72 (el
+publicado, 0.64, está en el medio). El umbral de sensibilidad fue más estable (0.045 a 0.05) y su recall de prueba
+estuvo entre 0.80 y 0.82. Con otra partición de los datos, las diferencias serían mayores. Es razonable esperar que
+el umbral de sensibilidad detecte entre 7 y 8 de cada 10 casos, no más.
+
+**Calibración** (`figuras/evaluacion.png`): las probabilidades predichas coinciden en general con las frecuencias
+reales; por ejemplo, donde el modelo predice en promedio 16.9 % la tasa real es 18.5 %. En el tramo de 4.9 % predicho la
+tasa real fue 2.0 %, aunque con pocos casos por tramo [VanCalster2019].
 
 ## 6. Conclusión (0.5 pts)
 
-Con solo cinco datos clínicos es posible ordenar a los pacientes por riesgo de ACV con un AUC de 0.84 (IC 95 %
-0.78–0.89), y el riesgo estimado es una probabilidad calibrada y no un simple sí o no. La **edad explica casi todo
-el poder predictivo** (AUC 0.834 por sí sola): la hipertensión, la enfermedad cardíaca, la glucosa y el IMC aportan
-una mejora pequeña. Un nivel de riesgo bajo, moderado o alto es más útil en un tamizaje que una única clasificación:
-el umbral de sensibilidad detecta 8 de cada 10 casos, y el de F1 prioriza la precisión.
+Con cuatro datos clínicos es posible ordenar a los pacientes por riesgo de ACV con un AUC de 0.84 (IC 95 %
+0.78–0.90), y el riesgo estimado es una probabilidad calibrada y no un simple sí o no. La **edad explica casi todo
+el poder predictivo** (AUC 0.834 por sí sola): la hipertensión, la enfermedad cardíaca y la glucosa aportan una
+mejora pequeña. Un nivel de riesgo bajo, moderado o alto es más útil en un tamizaje que una única clasificación: el
+umbral de sensibilidad detecta alrededor de 7 a 8 de cada 10 casos, y el de F1 prioriza la precisión.
 
 Los hallazgos metodológicos principales fueron (1) que la exactitud engaña (95.1 % sin detectar a nadie), (2) que el
-`bmi` faltante es un artefacto informativo que se identificó y se excluyó, y (3) que con solo 50 positivos en la
-prueba, los intervalos de confianza son amplios y las diferencias entre modelos no son concluyentes.
+`bmi` faltante es un artefacto informativo que **se filtraba al modelo a través de la imputación**, sin que nadie lo
+incluyera, y se descubrió al verificar el modelo de forma independiente, y (3) que con solo 50 positivos en la
+prueba, los intervalos de confianza son amplios y los umbrales dependen del azar.
 
 **Limitaciones.** (1) **No es un diagnóstico.** (2) El **origen del conjunto es confidencial**: se desconoce la
-población, el tipo de ACV (isquémico o hemorrágico) y la fecha, y no hay validación externa, por lo que no se puede
-afirmar que el modelo sirva en otras poblaciones; un modelo de predicción debería reportarse según TRIPOD
-[Collins2015]. (3) Son 249 casos positivos en total (50 en la prueba): el AUC de prueba tiene un intervalo de ±0.06
-y el recall, de ±0.15. (4) Las asociaciones no son causales (la edad confunde a casi todas las demás variables).
-(5) El `bmi` faltante, informativo en los datos, no se aprovecha ni se puede aprovechar en la aplicación. (6) El
-umbral de sensibilidad (80 %) es una elección razonable, no un criterio clínico validado.
+población, el tipo de ACV (isquémico o hemorrágico) y la fecha, y no hay validación externa; un modelo de predicción
+debería reportarse según TRIPOD [Collins2015]. (3) El conjunto no tiene **horizonte temporal**: no se sabe en qué
+plazo ocurre el ACV, por lo que "probabilidad de sufrir un ACV" no indica cuándo. (4) Son 249 casos positivos en
+total (50 en la prueba): el AUC de prueba tiene un intervalo de ±0.06 y el recall, de ±0.1 a ±0.15. (5) Las
+asociaciones no son causales (la edad confunde a casi todas las demás variables). (6) El modelo extrapola en
+combinaciones poco frecuentes (por ejemplo, solo hay un menor de edad con hipertensión en los datos). (7) El umbral
+de sensibilidad (80 %) es una elección razonable, no un criterio clínico validado. (8) El `bmi` y otros factores de
+riesgo conocidos (tabaquismo, diabetes diagnosticada) no aportan en estos datos, lo que no significa que carezcan
+de relevancia clínica.
 
 ## Referencias (en `docs_latex/referencias.bib`)
 
