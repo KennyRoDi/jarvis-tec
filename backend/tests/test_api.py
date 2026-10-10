@@ -54,3 +54,16 @@ def test_cada_comando_de_voz_se_asocia_a_su_propio_modelo():
     for slug, modelo in REGISTRO.items():
         for comando in modelo.info["comandos"]:
             assert interpretar(comando)["modelo"] == slug, f"'{comando}' ({slug}) se asocia a otro modelo"
+
+
+def test_los_metadatos_de_cada_modelo_son_completos_y_los_comandos_no_se_repiten():
+    """Nombre, slug, tipo y al menos 2 comandos de voz por modelo; ningún comando aparece en dos modelos."""
+    vistos = {}
+    for slug, modelo in REGISTRO.items():
+        info = modelo.info
+        assert modelo.id.endswith(slug) and info["slug"] == slug, slug
+        assert info["nombre"].strip() and info["tipo"] in ("regresion", "clasificacion", "recomendacion"), slug
+        assert len(info["comandos"]) >= 2 and all(c.strip() for c in info["comandos"]), slug
+        for comando in info["comandos"]:
+            assert comando not in vistos, f"'{comando}' está en {vistos[comando]} y en {slug}"
+            vistos[comando] = slug

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from core.entrenamiento import intervalo_bootstrap, metricas_clasificacion, umbral_optimo_f1, umbral_para_recall
-from core.modelos import cargar_artefacto, fuera_de_rango
+from core.modelos import cargar_artefacto, fuera_de_rango, predecir_con_pipeline
 
 
 def test_matriz_de_confusion_respeta_el_orden_pedido():
@@ -107,3 +107,21 @@ def test_intervalo_bootstrap_descarta_las_remuestras_de_una_sola_clase():
     from sklearn.metrics import roc_auc_score
     ic = intervalo_bootstrap(np.array([1] + [0] * 7), np.linspace(0.1, 0.9, 8), roc_auc_score, remuestreos=200)
     assert 0 <= ic[0] <= ic[1] <= 1
+
+
+def test_predecir_con_pipeline_devuelve_la_clase_y_los_puntajes_redondeados_a_4_decimales(tmp_path):
+    import pandas as pd
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+    rng = np.random.default_rng(0)
+    X = pd.DataFrame({"a": rng.normal(size=90), "b": rng.normal(size=90)})
+    y = np.array(["x", "y", "z"] * 30)
+    pipeline = Pipeline([("e", StandardScaler()), ("m", LogisticRegression())]).fit(X, y)
+    joblib.dump({"pipeline": pipeline}, tmp_path / "modelo.joblib")
+    fila = {"a": 0.3, "b": -1.2}
+    clase, puntajes = predecir_con_pipeline(tmp_path, "m", fila)
+    crudo = pipeline.predict_proba(pd.DataFrame([fila]))[0]
+    assert clase == pipeline.predict(pd.DataFrame([fila]))[0] and set(puntajes) == {"x", "y", "z"}
+    for c, p in zip(pipeline.classes_, crudo):
+        assert puntajes[c] == round(float(p), 4), "redondeo a 4 decimales, no 1 ni 2"

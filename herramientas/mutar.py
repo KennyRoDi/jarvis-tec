@@ -7,6 +7,8 @@ base = Path(f"features/{carpeta}")
 originales = {f: (base / f).read_text() for f in ("train.py", "router.py")}
 try:
     for archivo, etiqueta, viejo, nuevo in mod.M[inicio:fin]:
+        for f, orig in originales.items():  # restaurar AMBOS archivos: una mutación anterior no debe contaminar la siguiente
+            (base / f).write_text(orig)
         o = originales[archivo]
         if viejo not in o:
             print(f"  [sin aplicar] {etiqueta}", flush=True); continue
