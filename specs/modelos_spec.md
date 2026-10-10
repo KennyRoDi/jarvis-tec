@@ -51,7 +51,7 @@ y renombrar el CSV principal a `dataset.csv`.
 
 | #  | SPEC                                                                            | ¿Se ejecuta solo con la voz? | Estado |
 |----|---------------------------------------------------------------------------------|------------------------------|--------|
-| 01 | [bitcoin](../backend/features/modelo_01_bitcoin/SPEC.md)                        | Sí                           | ⏳ |
+| 01 | [bitcoin](../backend/features/modelo_01_bitcoin/SPEC.md)                        | Sí                           | ✅ entrenado (falta interfaz) |
 | 02 | [autos](../backend/features/modelo_02_autos/SPEC.md)                            | No (formulario)              | ✅ entrenado (falta interfaz y referencias) |
 | 03 | [vino](../backend/features/modelo_03_vino/SPEC.md)                              | No                           | ✅ entrenado (falta interfaz) |
 | 04 | [churn](../backend/features/modelo_04_churn/SPEC.md)                            | No                           | ✅ entrenado (falta interfaz) |

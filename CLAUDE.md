@@ -127,8 +127,8 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
 | 5  | 05 acv             | 4.9 % de positivos: métricas distintas a accuracy, umbrales, bmi faltante informativo | ✅ (2026-10-09) |
 | 6  | 06 hepatitis       | Multiclase muy desbalanceada, clase de 7 filas | ✅ (2026-10-09) |
 | 7  | 07 cirrosis        | 418 filas, 106 casi vacías, fuga de información, 4 etapas desiguales | ✅ (2026-10-09) |
-| 8  | 01 bitcoin         | Serie temporal: fechas, `-`, partición temporal, rezagos, predicción recursiva | ⏳ **siguiente** |
-| 9  | 10 sp500           | Serie temporal multi-símbolo; interpretar el símbolo desde la voz | ⏳ |
+| 8  | 01 bitcoin         | Serie temporal: fechas, `-`, partición temporal, rezagos, predicción recursiva | ✅ (2026-10-10) |
+| 9  | 10 sp500           | Serie temporal multi-símbolo; interpretar el símbolo desde la voz | ⏳ **siguiente** |
 
 **Lecciones del modelo 08 que aplican a los demás:**
 - Seleccionar el algoritmo solo con validación cruzada sobre el entrenamiento y usar el conjunto de prueba una vez.
@@ -174,6 +174,11 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   rellenados **al azar con valores observados** y (c) solo el indicador de faltante. Si el aporte desaparece con (b), es un artefacto
   (el `bmi` del 05); si sobrevive, es señal (el ALP del 06). No concluir por analogía: el 06 lo hizo y la revisión lo corrigió.
 - **`herramientas/mutar.py` restaura ambos archivos antes de cada mutación** (un fallo anterior contaminaba las mutaciones consecutivas).
+- **Series de precios (modelo 01)**: comparar siempre con la **persistencia** (mañana = hoy) y con la deriva; predecir el retorno
+  logarítmico (no el precio) con características solo de cierres pasados para poder encadenar la predicción recursiva; medir la
+  habilidad con IC (bootstrap por bloques) y **el acierto de dirección contra "siempre sube"** (en un mercado alcista coinciden). Si ningún modelo
+  supera a la persistencia, decirlo en el análisis y en el `texto` de la API, y ofrecer lo que sí funciona (el intervalo calibrado). Un Ridge con α
+  en el borde de la rejilla se reduce a su intercepto: reportarlo.
 - **Clases raras (< 30 casos) en multiclase** (modelo 06): ponderar las clases y declarar que los puntajes no son probabilidades
   calibradas; reportar IC bootstrap de la prueba y las predicciones fuera de muestra del entrenamiento (más estables por
   clase); mirar la vista binaria enfermedad/sano. Verificar si el origen de las clases es distinto (los donantes del 06 tienen ≥ 32 años).
@@ -253,7 +258,8 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Modelo 05 acv                | ✅ entrenado (regresión logística, 4 variables sin bmi; AUC prueba 0.840 / CV 0.842, umbrales 0.11 y 0.045); falta interfaz |
 | Modelo 06 hepatitis          | ✅ entrenado (RF, F1 macro prueba 0.580 / CV 0.635, 11 variables con ALP y sin sexo); falta interfaz |
 | Modelo 07 cirrosis           | ✅ entrenado (RF, F1 macro prueba 0.465 / CV 0.460, solo pacientes completos); falta interfaz |
-| Modelos 01, 10               | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
+| Modelo 01 bitcoin            | ✅ entrenado (Ridge ≈ deriva, sin mejora demostrable sobre la persistencia; intervalo 95 % calibrado); falta interfaz |
+| Modelo 10 sp500              | ⏳ plantilla con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |
 | Comandos de voz → modelo     | 🟡 reconoce el modelo; faltan parámetros y el tono según la emoción   |
