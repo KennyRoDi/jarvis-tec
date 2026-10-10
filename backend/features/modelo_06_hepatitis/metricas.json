@@ -1,0 +1,208 @@
+{
+  "metricas": {
+    "accuracy": 0.9344,
+    "precision_macro": 0.7722,
+    "recall_macro": 0.5792,
+    "f1_macro": 0.6404,
+    "matriz_confusion": [
+      [
+        107,
+        0,
+        0,
+        0
+      ],
+      [
+        2,
+        2,
+        1,
+        0
+      ],
+      [
+        2,
+        0,
+        1,
+        1
+      ],
+      [
+        1,
+        0,
+        1,
+        4
+      ]
+    ],
+    "orden_clases": [
+      "donante",
+      "hepatitis",
+      "fibrosis",
+      "cirrosis"
+    ],
+    "por_clase": {
+      "donante": {
+        "precision": 0.955,
+        "recall": 1.0,
+        "f1-score": 0.977,
+        "support": 107.0
+      },
+      "hepatitis": {
+        "precision": 1.0,
+        "recall": 0.4,
+        "f1-score": 0.571,
+        "support": 5.0
+      },
+      "fibrosis": {
+        "precision": 0.333,
+        "recall": 0.25,
+        "f1-score": 0.286,
+        "support": 4.0
+      },
+      "cirrosis": {
+        "precision": 0.8,
+        "recall": 0.667,
+        "f1-score": 0.727,
+        "support": 6.0
+      }
+    },
+    "enfermedad_vs_donante": {
+      "sensibilidad": 0.6667,
+      "especificidad": 1.0
+    },
+    "ic95": {
+      "f1_macro": [
+        0.4109,
+        0.8147
+      ],
+      "accuracy": [
+        0.8934,
+        0.9754
+      ]
+    },
+    "modelo": "random forest",
+    "comparacion_cv": {
+      "clase mayoritaria (línea base)": {
+        "cv_f1_macro": 0.2336,
+        "cv_f1_desv": 0.0001,
+        "cv_balanced_accuracy": 0.25
+      },
+      "regresión logística": {
+        "cv_f1_macro": 0.5762,
+        "cv_f1_desv": 0.0663,
+        "cv_balanced_accuracy": 0.66
+      },
+      "k vecinos": {
+        "cv_f1_macro": 0.5159,
+        "cv_f1_desv": 0.0829,
+        "cv_balanced_accuracy": 0.4877
+      },
+      "random forest": {
+        "cv_f1_macro": 0.5881,
+        "cv_f1_desv": 0.1167,
+        "cv_balanced_accuracy": 0.559
+      }
+    },
+    "baseline": {
+      "accuracy": 0.877,
+      "precision_macro": 0.2193,
+      "recall_macro": 0.25,
+      "f1_macro": 0.2336,
+      "orden_clases": [
+        "donante",
+        "hepatitis",
+        "fibrosis",
+        "cirrosis"
+      ]
+    },
+    "n_entrenamiento": 486,
+    "n_prueba": 122,
+    "casos_por_clase_prueba": {
+      "donante": 107,
+      "hepatitis": 5,
+      "fibrosis": 4,
+      "cirrosis": 6
+    },
+    "oof_entrenamiento": {
+      "accuracy": 0.9218,
+      "recall_macro": 0.5638,
+      "f1_macro": 0.5871,
+      "por_clase": {
+        "donante": {
+          "precision": 0.948,
+          "recall": 0.988,
+          "f1-score": 0.968,
+          "support": 426.0
+        },
+        "hepatitis": {
+          "precision": 0.5,
+          "recall": 0.105,
+          "f1-score": 0.174,
+          "support": 19.0
+        },
+        "fibrosis": {
+          "precision": 0.438,
+          "recall": 0.412,
+          "f1-score": 0.424,
+          "support": 17.0
+        },
+        "cirrosis": {
+          "precision": 0.818,
+          "recall": 0.75,
+          "f1-score": 0.783,
+          "support": 24.0
+        }
+      },
+      "enfermedad_vs_donante": {
+        "sensibilidad": 0.6167,
+        "especificidad": 0.9883
+      }
+    },
+    "experimento_variables": {
+      "12 (todas, ALP imputada)": {
+        "variables": 12,
+        "cv_f1_macro": 0.5823,
+        "cv_f1_desv": 0.0732
+      },
+      "11 (las elegidas, sin ALP)": {
+        "variables": 11,
+        "cv_f1_macro": 0.5762,
+        "cv_f1_desv": 0.0663
+      },
+      "9 (solo laboratorio, sin edad ni sexo)": {
+        "variables": 9,
+        "cv_f1_macro": 0.5185,
+        "cv_f1_desv": 0.079
+      },
+      "2 (solo edad y sexo)": {
+        "variables": 2,
+        "cv_f1_macro": 0.2099,
+        "cv_f1_desv": 0.0442
+      },
+      "12 + indicador de ALP faltante (artefacto, no se usa)": {
+        "variables": 12,
+        "cv_f1_macro": 0.5861,
+        "cv_f1_desv": 0.066
+      }
+    },
+    "experimento_alp_random_forest": {
+      "random forest sin ALP (elegido)": {
+        "cv_f1_macro": 0.5881,
+        "cv_f1_desv": 0.1167
+      },
+      "random forest con ALP imputada por la mediana": {
+        "cv_f1_macro": 0.6417,
+        "cv_f1_desv": 0.0992
+      }
+    }
+  },
+  "entrada_ejemplo": {
+    "age": 32,
+    "alb": 50.9,
+    "alt": 23.2,
+    "ast": 21.2,
+    "bil": 6.9,
+    "che": 8.69,
+    "chol": 4.1,
+    "crea": 83.0,
+    "ggt": 13.7,
+    "prot": 71.3,
+    "sex": "m"
+  }
+}
