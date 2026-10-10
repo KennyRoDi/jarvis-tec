@@ -20,3 +20,9 @@ Los ids de las celdas son fijos y no se guardan tiempos, así que regenerar un n
 - Español, sin emojis, y el estilo de la plantilla: análisis del problema, hilo conductor, librerías, secciones numeradas, conclusiones.
 - Las salidas guardadas se generaron con las versiones de `requirements.txt` (scikit-learn 1.9, pandas 3) y coinciden con `metricas.json`. También se comprobó que los 10 corren con scikit-learn 1.6 y pandas 2.2, parecidos a los de Colab; con esas versiones el último decimal de algunos modelos de árboles puede cambiar (en el 07, con 56 pacientes de prueba, un poco más).
 - Afirmar en el texto solo lo que muestran las salidas del propio notebook.
+
+## Prueba en Colab real (2026-10-10)
+Los 10 notebooks se ejecutaron en una sesión de Google Colab (Python 3.13, scikit-learn 1.6.1, pandas 2.2.3, numpy 2.1.3) conectada con `colab-mcp`:
+cada uno se descargó de su rama de GitHub junto con su `dataset.csv` (que quedó en `sample_data/`) y se corrieron todas sus celdas de código sin errores.
+Las cifras coinciden con `metricas.json`, salvo el último decimal en 03, 06 y 07 (los bosques cambian un poco entre versiones de scikit-learn; en el 07, con 56 pacientes de prueba, un poco más).
+Limitaciones de esa prueba: se ejecutó el código de las celdas con un script (sin las magias `%` y con el backend de gráficos `Agg`), no la interfaz del notebook, y no se probó la ruta de `files.upload()`.
