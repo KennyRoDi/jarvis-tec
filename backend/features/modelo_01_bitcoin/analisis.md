@@ -7,8 +7,8 @@
 ## 1. Análisis del problema (0.5 pts)
 
 Se plantea estimar el **precio de cierre del Bitcoin en dólares** (USD) para el día siguiente y hasta siete días
-después del último dato disponible. Es un problema de **regresión sobre una serie de tiempo**, cuya variable objetivo es
-`Close`. El usuario solo indica cuántos días adelante quiere la estimación (por defecto, 1): el modelo parte de su propio historial.
+después del último dato disponible. Es un problema de **regresión sobre una serie de tiempo** sobre la columna `Close`; para modelarlo
+se usa como objetivo el retorno logarítmico del día siguiente (ver etapa 2). El usuario solo indica cuántos días adelante quiere la estimación (por defecto, 1): el modelo parte de su propio historial.
 
 Dos particularidades condicionan todo el trabajo:
 
@@ -46,16 +46,16 @@ que cambió 20 veces a lo largo de la serie.
 
 - `figuras/serie_precio.png` (escala logarítmica): el precio sube de 134 a 2 875 USD con episodios de burbuja y caída (2013-2014) y un rally sostenido al final. **La prueba (últimos 312 días, desde el
   23-sep-2016) es un mercado alcista: el precio se multiplica por 4.77.** Esto importa para interpretar cualquier métrica de dirección.
-- `figuras/distribucion_retornos.png`: el retorno diario tiene media 0.20 %, desviación 4.26 %, mínimo −26.6 % y máximo +35.7 %: **colas pesadas**, una regularidad empírica general de los activos financieros [Cont2001].
+- `figuras/distribucion_retornos.png`: el retorno diario tiene media 0.20 %, desviación 4.26 %, mínimo −26.6 % y máximo +35.7 %: **colas pesadas** (curtosis en exceso de 10.3; la normal tiene 0), una regularidad empírica general de los activos financieros [Cont2001].
 - `figuras/autocorrelacion.png`: la autocorrelación de los retornos es casi nula (rezagos 1 a 5: −0.001, −0.043, −0.019, 0.064, 0.039; la cota del 95 % es ±0.050; algunos rezagos aislados superan la cota por poco), mientras que la de
-  los retornos al cuadrado es alta (0.32 en el rezago 1): **el signo del movimiento no se repite, pero su tamaño sí** (agrupamiento de la volatilidad [Cont2001]). Esto anticipa lo que se encuentra más adelante.
-- `figuras/volatilidad.png`: la volatilidad móvil de 30 días cambia mucho con el tiempo: la desviación diaria por año fue 6.7 % (2013), 3.9 % (2014), 3.7 % (2015), 2.5 % (2016) y 4.4 % (2017). Por eso el σ del intervalo (calculado con todo el entrenamiento, 4.2 %) es una aproximación gruesa.
+  los retornos al cuadrado es alta (0.32, 0.16 y 0.19 en los rezagos 1 a 3): **el signo del movimiento casi no se repite, pero su tamaño sí** (agrupamiento de la volatilidad [Cont2001]). Esto anticipa lo que se encuentra más adelante.
+- `figuras/volatilidad.png`: la volatilidad móvil de 30 días cambia mucho con el tiempo: la desviación diaria por año fue 6.7 % (2013), 3.9 % (2014), 3.7 % (2015), 2.5 % (2016) y 4.4 % (2017). Por eso el σ del intervalo (calculado con todo el entrenamiento, 4.3 %) es una aproximación gruesa.
 - El precio sube en el 54.5 % de los días de todo el período.
 
 ## 4. Modelo (2 pts)
 
 **Partición temporal.** La prueba son los **últimos 312 días** (del 23-sep-2016 al 31-jul-2017); el entrenamiento, 1 213 días de origen hasta el 22-sep-2016 (cada fila usa los cierres hasta ese día y tiene como objetivo el
-retorno del día siguiente). Ningún objetivo de entrenamiento cae en la prueba, y una prueba automática infla diez veces los cierres de la prueba y exige que la selección y el ajuste no cambien [Hyndman2021].
+retorno del día siguiente). Ningún objetivo de entrenamiento cae en la prueba (el último origen de entrenamiento es el 21-sep-2016 y su objetivo es el cierre del 22), y una prueba automática infla diez veces los cierres de la prueba y exige que la selección y el ajuste no cambien. La separación temporal sigue la recomendación habitual para series [Hyndman2021].
 
 **Candidatos.** Dos líneas base (que **no pueden ser elegidas**) y tres modelos de aprendizaje automático:
 
@@ -63,14 +63,14 @@ retorno del día siguiente). Ningún objetivo de entrenamiento cae en la prueba,
 |------------------------------------|---------------------------------------------------------------------------------------|
 | Persistencia (línea base)          | Retorno predicho = 0: mañana = hoy                                                      |
 | Deriva (línea base)                | Retorno predicho = promedio del entrenamiento (0.126 % diario)                          |
-| Ridge                              | Regresión lineal con penalización L2 [Hoerl1970], variables estandarizadas, α elegido por validación cruzada interna |
+| Ridge                              | Regresión lineal con penalización L2 [Hoerl1970], variables estandarizadas; α elegido con la validación cruzada leave-one-out interna de `RidgeCV` (no temporal, pero solo ve el entrenamiento) |
 | Random Forest                      | 200 árboles de profundidad ≤ 6 y ≥ 20 días por hoja [Breiman2001]                        |
 | Gradient Boosting                  | Histogramas, 100 iteraciones, tasa 0.03, profundidad ≤ 3 [Friedman2001; Pedregosa2011]   |
 
 **Selección.** Solo con el entrenamiento y con validación cruzada de **ventana creciente** (5 pliegues) sobre el RMSE del retorno diario [Bergmeir2012]. El conjunto de prueba se usó una vez, para medir.
 
 **Predicción a varios días.** Se predice el retorno de un día, se calcula el cierre, se agrega al historial y se repite hasta el horizonte pedido (máximo 7). El **intervalo del 95 %** que se informa es
-cierre × exp(± 1.96 · σ · √días), donde σ (4.2 %) es la desviación del retorno diario en el entrenamiento: un supuesto de paseo aleatorio que la evaluación pone a prueba.
+cierre × exp(± 1.96 · σ · √días), donde σ es la desviación del retorno diario: 4.3 % calculada con el entrenamiento (la que se evalúa) y 4.2 % con todos los días (la que usa la API). Es un supuesto de paseo aleatorio con volatilidad constante que la evaluación pone a prueba.
 
 ## 5. Evaluación (1 pt)
 
@@ -84,12 +84,12 @@ cierre × exp(± 1.96 · σ · √días), donde σ (4.2 %) es la desviación del
 | Random Forest               | 0.03716 ± 0.01117 |
 | Gradient Boosting           | 0.03776 ± 0.01177 |
 
-Ningún modelo mejora a la persistencia, y las diferencias (0.0002–0.0013) son mucho menores que la variación entre pliegues (≈ 0.01). Los dos modelos de árboles empeoran con su flexibilidad: ajustan ruido.
+Ningún modelo mejora a la persistencia, y las diferencias (0.0002–0.0013) son mucho menores que la variación entre pliegues (≈ 0.01). Los dos modelos de árboles no mejoran (la diferencia, 0.0007–0.0013, tampoco es demostrable), lo que es coherente con que su flexibilidad ajuste ruido.
 Entre los de aprendizaje automático gana el Ridge, **que coincide exactamente con la deriva**: el α elegido es el máximo de la rejilla (10⁵), todos los coeficientes quedan en ≈ 0 (el mayor, 5·10⁻⁵ en unidades estandarizadas) y
 el modelo se reduce a su intercepto. Es decir, **el Ridge "decide" que las variables de rezago no aportan nada** y predice el último cierre multiplicado por el crecimiento medio.
 
-**Prueba, 306 orígenes por horizonte** (cada día de la prueba como punto de partida, con las siete predicciones posibles con dato real; se predice y compara con el cierre real). Habilidad = 1 − RMSE(modelo)/RMSE(persistencia); su IC 95 %
-sale de un bootstrap por bloques circulares de 14 días [Kunsch1989], porque los errores de días vecinos están correlacionados:
+**Prueba, 306 orígenes por horizonte** (cada día desde el 22-sep-2016, último de entrenamiento, hasta el 24-jul-2017, con dato real a siete días; se predice y compara con el cierre real). Habilidad = 1 − RMSE(modelo)/RMSE(persistencia); su IC 95 %
+sale de un bootstrap por bloques de 14 días consecutivos con envoltura circular (adaptación del de bloques [Kunsch1989]), porque los errores de días vecinos están correlacionados:
 
 | Días adelante | RMSE modelo (USD) | RMSE persistencia (USD) | MAPE modelo / persistencia | Habilidad (IC 95 %)         | Cobertura del intervalo 95 % |
 |---------------|-------------------|--------------------------|-----------------------------|------------------------------|------------------------------|
@@ -98,22 +98,22 @@ sale de un bootstrap por bloques circulares de 14 días [Kunsch1989], porque los
 | 7             | 174.3             | 177.0                    | 7.04 % / 7.25 %             | +1.53 % (−0.87 %, +3.50 %)   | 97.1 %                       |
 
 - **No hay mejora demostrable sobre repetir el último precio**: los tres intervalos incluyen el 0. La pequeña ventaja nominal viene solo de la deriva positiva en un mercado alcista (la deriva obtiene RMSE casi idéntico: 68.00, 115.99, 174.23).
-- El **acierto de dirección** del modelo (63.1 %, 67.7 % y 69.3 % a 1, 3 y 7 días) es **exactamente igual al de predecir siempre "sube"**, porque la deriva es positiva y el modelo siempre predice una subida. En la prueba el precio subió en esa proporción de días. No es capacidad predictiva.
+- El **acierto de dirección** del modelo (63.1 %, 67.6 % y 69.3 % a 1, 3 y 7 días) es **exactamente igual al de predecir siempre "sube"**, porque la deriva es positiva y el modelo siempre predice una subida. En la prueba el precio subió en esa proporción de días. No es capacidad predictiva.
 - El error crece con el horizonte (RMSE de 68 a 174 USD; MAPE de 2.4 % a 7.0 %), como en un paseo aleatorio.
-- Los intervalos del 95 % cubren entre 95.8 % y 97.1 % de los cierres reales: están **bien calibrados** y es lo más útil que ofrece el servicio.
-- `figuras/prueba_7_dias.png` muestra la predicción casi superpuesta con la persistencia y rezagada respecto del precio real: llega tarde a cada giro.
+- Los intervalos del 95 % cubren entre 95.8 % y 97.1 % de los cierres reales (96.4, 95.8 y 97.1 % a 1, 3 y 7 días): son **ligeramente conservadores**, porque el σ del entrenamiento incluye 2013, un año mucho más volátil que la prueba (el error logarítmico real fue ≈ 0.8 veces el supuesto). La cobertura depende del régimen: en la primera mitad de la prueba fue 97–99 % y en la segunda 93–96 % (96.1, 93.5 y 95.4 % a 1, 3 y 7 días), y con orígenes solapados la muestra efectiva es pequeña (≈ 44 independientes a 7 días), así que no se distingue 95 % de 97 %. Es lo más útil que ofrece el servicio.
+- `figuras/prueba_7_dias.png` muestra la predicción casi superpuesta con la persistencia y rezagada respecto del precio real (consecuencia de que predecir ≈ repetir el último precio).
 
 **Despliegue.** Las métricas son las de la partición temporal; el modelo que sirve la API se reentrena con **todos** los días para partir del último cierre real (2 875.34 USD). Con todo el período la deriva sube a 0.20 % diario, y por eso
 la API predice 2 881.6 USD para el 1-ago-2017 y 2 917.9 USD para 7 días. Estas cifras del modelo final no se pueden medir con datos independientes.
 
 ## 6. Conclusión (0.5 pts)
 
-El Bitcoin del período 2013-2017 se comporta, para fines de predicción con su propio historial, como un **paseo aleatorio con deriva**: ni los rezagos, ni las medias móviles, ni la volatilidad, ni modelos de árboles aportan una ventaja sobre repetir el último precio.
+El Bitcoin del período 2013-2017 se comporta, para fines de predicción con su propio historial, como un **paseo aleatorio con deriva**: las variables de rezago, medias móviles y volatilidad no aportaron una ventaja medible sobre repetir el último precio ni con el Ridge (coeficientes ≈ 0) ni con modelos de árboles; no se hizo un experimento de quitar cada variable porque el Ridge ya las descarta todas.
 El modelo entregado es un Ridge que lo reconoce (coeficientes ≈ 0), de modo que su pronóstico es "el último cierre más el crecimiento medio". Se publica porque cumple con evaluar con honestidad y porque su producto útil no es el punto sino el **rango del 95 %**,
-que sí está calibrado y que crece con la raíz del horizonte.
+cuya cobertura en la prueba fue adecuada (ligeramente conservadora) y que crece con la raíz del horizonte.
 
 **Limitaciones.** (1) Los datos terminan el 31 de julio de 2017; la API no conoce el precio actual y lo advierte siempre. (2) Una sola ventana de prueba, de un mercado alcista: la ventaja de dirección es engañosa y la deriva positiva se extrapola hacia adelante; en un mercado bajista el modelo seguiría prediciendo subidas.
-(3) El intervalo supone volatilidad constante (la serie muestra agrupamiento de volatilidad), aunque la cobertura en la prueba fue adecuada. (4) Solo se usó el historial de cierres: ninguna información externa (noticias, regulación, volumen) ni exógena. (5) La conclusión depende de los candidatos probados; no descarta que modelos de otra clase
+(3) El intervalo supone volatilidad constante (la serie muestra agrupamiento de volatilidad); su cobertura en la prueba fue 95.8–97.1 % pero baja a 93–96 % en la segunda mitad. (4) Solo se usó el historial de cierres: ninguna información externa (noticias, regulación, volumen) ni exógena. (5) La conclusión depende de los candidatos probados; no descarta que modelos de otra clase
 (p. ej., redes recurrentes con más variables) encuentren estructura, aunque la evidencia de eficiencia débil [Fama1970; Meese1983] hace improbable una mejora sostenida. (6) **No es una recomendación de inversión.**
 
 ## Referencias (en `docs_latex/referencias.bib`)

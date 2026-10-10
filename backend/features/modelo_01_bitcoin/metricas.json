@@ -25,6 +25,10 @@
           "acierto_direccion": 0.6307
         },
         "cobertura_intervalo_95": 0.9641,
+        "cobertura_intervalo_95_por_mitad": [
+          0.9673,
+          0.9608
+        ],
         "habilidad_frente_a_persistencia": 0.0017,
         "habilidad_ic95": [
           -0.0023,
@@ -56,6 +60,10 @@
           "acierto_direccion": 0.6765
         },
         "cobertura_intervalo_95": 0.9575,
+        "cobertura_intervalo_95_por_mitad": [
+          0.9804,
+          0.9346
+        ],
         "habilidad_frente_a_persistencia": 0.0055,
         "habilidad_ic95": [
           -0.0056,
@@ -87,6 +95,10 @@
           "acierto_direccion": 0.6928
         },
         "cobertura_intervalo_95": 0.9706,
+        "cobertura_intervalo_95_por_mitad": [
+          0.9869,
+          0.9542
+        ],
         "habilidad_frente_a_persistencia": 0.0153,
         "habilidad_ic95": [
           -0.0087,

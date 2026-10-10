@@ -19,15 +19,14 @@ El desarrollo de los modelos se pausó por límite de cuota. **Antes de seguir, 
 | #5 | `feature/modelo-05-acv`           | `feature/modelo-04-churn`         | 05 acv            |
 | #6 | `feature/modelo-06-hepatitis`     | `feature/modelo-05-acv`           | 06 hepatitis      |
 | #7 | `feature/modelo-07-cirrosis`      | `feature/modelo-06-hepatitis`     | 07 cirrosis       |
+| #8 | `feature/modelo-01-bitcoin`       | `feature/modelo-07-cirrosis`      | 01 bitcoin        |
 
-Fusionar en orden #1 → #7; tras cada fusión GitHub redirige el siguiente a `main` (o cambiar la base a mano). Si se
+Fusionar en orden #1 → #8; tras cada fusión GitHub redirige el siguiente a `main` (o cambiar la base a mano). Si se
 piden cambios en un PR intermedio, hay que rebasar las ramas siguientes.
 
 **Pendiente, en este orden:**
-1. **Modelos 01 bitcoin y 10 sp500**, cada uno en su rama `feature/modelo-XX-slug` creada
-   desde la última (`feature/modelo-07-cirrosis`) y con PR apilado. Leer el `SPEC.md` del modelo: trae las trampas ya
-   verificadas en los datos. 01 y 10 son series de tiempo: seguir el patrón del 09 (partición y validación por fechas,
-   transformador de fechas en módulo propio, reentrenar con todo para servir).
+1. **Modelo 10 sp500**, en su rama `feature/modelo-10-sp500` creada desde `feature/modelo-01-bitcoin` y con PR apilado. Leer el `SPEC.md`:
+   trae las trampas ya verificadas. Es una serie de tiempo: seguir el patrón del 01 (retorno logarítmico, predicción recursiva, persistencia como referencia).
 2. **Re-verificar el 05 y el 06 con un subagente independiente**: tras su última revisión cambiaron (05: se quitó el `bmi`, ganó la
    regresión logística, umbrales 0.11 y 0.045; 06: el ALP volvió a entrar y se quitó el sexo); solo se comprobaron con pruebas y mutaciones propias.
 3. **PR de seguimiento** que lleve a los modelos 08, 09 y 03 lo aprendido después (en el 03, además, quitar `SVC(probability=True)`: el
@@ -177,7 +176,7 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
 - **Series de precios (modelo 01)**: comparar siempre con la **persistencia** (mañana = hoy) y con la deriva; predecir el retorno
   logarítmico (no el precio) con características solo de cierres pasados para poder encadenar la predicción recursiva; medir la
   habilidad con IC (bootstrap por bloques) y **el acierto de dirección contra "siempre sube"** (en un mercado alcista coinciden). Si ningún modelo
-  supera a la persistencia, decirlo en el análisis y en el `texto` de la API, y ofrecer lo que sí funciona (el intervalo calibrado). Un Ridge con α
+  supera a la persistencia, decirlo en el análisis y en el `texto` de la API, y ofrecer lo que sí funciona (el intervalo, verificando su cobertura por mitades de la prueba). Un Ridge con α
   en el borde de la rejilla se reduce a su intercepto: reportarlo.
 - **Clases raras (< 30 casos) en multiclase** (modelo 06): ponderar las clases y declarar que los puntajes no son probabilidades
   calibradas; reportar IC bootstrap de la prueba y las predicciones fuera de muestra del entrenamiento (más estables por
@@ -258,7 +257,7 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Modelo 05 acv                | ✅ entrenado (regresión logística, 4 variables sin bmi; AUC prueba 0.840 / CV 0.842, umbrales 0.11 y 0.045); falta interfaz |
 | Modelo 06 hepatitis          | ✅ entrenado (RF, F1 macro prueba 0.580 / CV 0.635, 11 variables con ALP y sin sexo); falta interfaz |
 | Modelo 07 cirrosis           | ✅ entrenado (RF, F1 macro prueba 0.465 / CV 0.460, solo pacientes completos); falta interfaz |
-| Modelo 01 bitcoin            | ✅ entrenado (Ridge ≈ deriva, sin mejora demostrable sobre la persistencia; intervalo 95 % calibrado); falta interfaz |
+| Modelo 01 bitcoin            | ✅ entrenado (Ridge ≈ deriva, sin mejora demostrable sobre la persistencia; intervalo 95 % con cobertura 96–97 %); falta interfaz |
 | Modelo 10 sp500              | ⏳ plantilla con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |

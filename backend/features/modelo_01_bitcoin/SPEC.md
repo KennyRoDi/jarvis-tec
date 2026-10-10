@@ -47,7 +47,7 @@ Frases cortas y en minúscula; no deben coincidir con las de otro modelo.
 
 ## Resultado (2026-10-10)
 
-Ridge que se reduce a la deriva (coeficientes ≈ 0); no mejora de forma demostrable a la persistencia (habilidad +0.2 % / +0.6 % / +1.5 % a 1 / 3 / 7 días, IC 95 % incluye 0); intervalo del 95 % bien calibrado (cobertura 96–97 %)
+Ridge que se reduce a la deriva (coeficientes ≈ 0); no mejora de forma demostrable a la persistencia (habilidad +0.2 % / +0.6 % / +1.5 % a 1 / 3 / 7 días, IC 95 % incluye 0); intervalo del 95 % algo conservador (cobertura 96–97 %)
 
 ## Archivos
 

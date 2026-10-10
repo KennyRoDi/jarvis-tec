@@ -81,4 +81,9 @@ M = [
  (T, "ejemplo de entrada distinto", '"entrada_ejemplo": {"dias_adelante": 1}', '"entrada_ejemplo": {"dias_adelante": 2}'),
  (T, "últimos cierres del inicio", "cierres[-VENTANA_MINIMA:]", "cierres[:VENTANA_MINIMA]"),
  (T, "fecha máxima del inicio", 'str(df.fecha.iloc[-1].date())', 'str(df.fecha.iloc[0].date())'),
+ # --- añadidas tras la verificación independiente ---
+ (R, "rango del 50 % en el texto", "con un rango del 95 % entre", "con un rango del 50 % entre"),
+ (R, "punto estimado del texto duplicado", "cerraría alrededor de {dolares(valor)}", "cerraría alrededor de {dolares(valor * 2)}"),
+ (T, "artefacto sin marca de reentrenado", "reentrenado_con_todo=True", "reentrenado_con_todo=False"),
+ (T, "cobertura por mitad intercambiada", "[round(float(np.mean(dentro[:mitad])), 4), round(float(np.mean(dentro[mitad:])), 4)]", "[round(float(np.mean(dentro[mitad:])), 4), round(float(np.mean(dentro[:mitad])), 4)]"),
 ]

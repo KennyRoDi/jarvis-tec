@@ -184,7 +184,10 @@ def evaluar(pipeline: Pipeline, persistencia: Pipeline, deriva: Pipeline, cierre
         entrada["siempre_sube"] = {"acierto_direccion": round(float(np.mean(sube)), 4)}
         lo = pred["modelo"][:, columna] * np.exp(-1.96 * sigma * np.sqrt(h))
         hi = pred["modelo"][:, columna] * np.exp(1.96 * sigma * np.sqrt(h))
-        entrada["cobertura_intervalo_95"] = round(float(np.mean((y >= lo) & (y <= hi))), 4)
+        dentro = (y >= lo) & (y <= hi)
+        entrada["cobertura_intervalo_95"] = round(float(np.mean(dentro)), 4)
+        mitad = len(y) // 2
+        entrada["cobertura_intervalo_95_por_mitad"] = [round(float(np.mean(dentro[:mitad])), 4), round(float(np.mean(dentro[mitad:])), 4)]
         entrada["habilidad_frente_a_persistencia"] = round(float(1 - np.sqrt(np.mean(error["modelo"] ** 2) / np.mean(error["persistencia"] ** 2))), 4)
         entrada["habilidad_ic95"] = intervalo_habilidad(error["modelo"], error["persistencia"])
         entrada["n_origenes"] = len(y)
@@ -235,7 +238,7 @@ def entrenar(df: pd.DataFrame, figuras: Path | None = None, imprimir: bool = Tru
     pipeline = candidatos()[ganador].fit(X_train, y_train)
     persistencia = candidatos()["persistencia (línea base)"].fit(X_train, y_train)
     deriva = candidatos()["deriva (línea base)"].fit(X_train, y_train)
-    sigma = float(np.std(y_train - pipeline.predict(X_train), ddof=1))  # desviación del retorno diario: da el intervalo del 95 %
+    sigma = float(np.std(y_train - pipeline.predict(X_train), ddof=1))  # desviación del retorno diario: da el intervalo del 95 % que se evalúa
 
     metricas = evaluar(pipeline, persistencia, deriva, cierres, prueba, sigma, figuras)
     metricas["modelo"] = ganador

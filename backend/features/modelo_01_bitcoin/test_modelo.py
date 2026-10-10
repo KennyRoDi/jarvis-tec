@@ -1,5 +1,6 @@
 """Pruebas del modelo 01 · Bitcoin (specs/api_rest_spec.md §3). Usan el modelo entrenado real."""
 import re
+import shutil
 from datetime import date, timedelta
 
 import joblib
@@ -9,6 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from core.modelos import REGISTRO, cargar_artefacto, leer_metricas
+from features.modelo_01_bitcoin import train
 from features.modelo_01_bitcoin.router import CARPETA, MAX_DIAS, Entrada, dolares, fecha_en_texto
 from features.modelo_01_bitcoin.serie import CARACTERISTICAS, VENTANA_MINIMA, caracteristicas, recursiva, ultima_fila
 from features.modelo_01_bitcoin.train import (HORIZONTES, MAX_HORIZONTE, OBJETIVO, autocorrelacion, candidatos, cargar_datos, construir,
@@ -431,3 +433,43 @@ def test_las_cifras_de_exploracion_citadas_en_el_analisis():
     assert autocorrelacion(r.dropna().to_numpy() ** 2, 1).round(2).tolist() == [0.32]
     assert round(r.mean(), 4) == 0.002 and round(r.std(), 4) == 0.0426 and round((r.dropna() > 0).mean(), 3) == 0.545
     assert round(df.cierre.iloc[-1] / df.cierre.iloc[1244], 2) == 4.77
+
+
+def test_el_texto_da_el_punto_estimado_y_el_rango_del_95(cliente):
+    for dias in (1, 5):
+        cuerpo = cliente.post(URL, json={"dias_adelante": dias}).json()
+        assert f"cerraría alrededor de {dolares(cuerpo['prediccion'])} dólares" in cuerpo["texto"] and "con un rango del 95 % entre" in cuerpo["texto"]
+
+
+def test_la_cobertura_por_mitades_se_publica_y_la_segunda_mitad_es_menor(reentrenado):
+    for h, e in reentrenado["metricas"]["horizontes"].items():
+        primera, segunda = e["cobertura_intervalo_95_por_mitad"]
+        assert 0.9 <= primera <= 1 and 0.9 <= segunda <= 1 and segunda < primera, "σ viene de años más volátiles: la prueba más reciente cubre menos"
+        assert e["cobertura_intervalo_95"] == pytest.approx((primera + segunda) / 2, abs=0.005)
+
+
+def test_el_entrenamiento_en_memoria_coincide_con_el_calculo_independiente_de_las_lineas_base(reentrenado):
+    """Sin leer metricas.json: persistencia y deriva recalculadas desde los datos, con el número de orígenes."""
+    c = cargar_datos().cierre.to_numpy()
+    corte, _ = particion_temporal(len(c))
+    t = np.arange(corte - 1, len(c) - MAX_HORIZONTE)
+    deriva = reentrenado["metricas"]["retorno_medio_dia_entrenamiento"]
+    for h in HORIZONTES:
+        e = reentrenado["metricas"]["horizontes"][str(h)]
+        assert e["n_origenes"] == len(t) == 306
+        assert e["persistencia"]["rmse"] == pytest.approx(np.sqrt(np.mean((c[t + h] - c[t]) ** 2)), abs=1e-3)
+        assert e["deriva"]["rmse"] == pytest.approx(np.sqrt(np.mean((c[t + h] - c[t] * np.exp(deriva * h)) ** 2)), rel=0.01), "deriva fijada con el entrenamiento"
+    assert reentrenado["metricas"]["n_prueba"] == 312 and reentrenado["metricas"]["fecha_inicio_prueba"] == "2016-09-23"
+    assert reentrenado["metricas"]["prueba_sube_x"] == 4.77
+
+
+def test_main_escribe_el_artefacto_con_todo_lo_necesario(tmp_path, monkeypatch):
+    shutil.copy(train.CARPETA / "dataset.csv", tmp_path / "dataset.csv")
+    monkeypatch.setattr(train, "CARPETA", tmp_path)
+    train.main()
+    a = joblib.load(tmp_path / "modelo.joblib")
+    assert a["reentrenado_con_todo"] is True and a["variables"] == CARACTERISTICAS and a["fecha_max"] == "2017-07-31"
+    assert a["metricas"] == leer_metricas(CARPETA)["metricas"] and a["ultimos_cierres"] == cargar_artefacto(CARPETA, "bitcoin")["ultimos_cierres"]
+    assert sorted(p.name for p in (tmp_path / "figuras").glob("*.png")) == sorted(
+        ["autocorrelacion.png", "distribucion_retornos.png", "habilidad_por_horizonte.png", "prueba_1_dia.png", "prueba_7_dias.png", "serie_precio.png", "volatilidad.png"])
+    assert (tmp_path / "metricas.json").exists()
