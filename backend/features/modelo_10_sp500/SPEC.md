@@ -56,6 +56,7 @@ Ridge que se reduce a la deriva (coeficientes ≈ 0), un modelo compartido por l
 | `router.py`      | `MODELO_INFO`, `Entrada` y `POST /predecir`                              |
 | `test_modelo.py` | Pruebas del endpoint con el modelo real                                  |
 | `analisis.md`    | Redacción académica de las 6 etapas (pasa a LaTeX)                       |
+| `notebook.ipynb` | Versión didáctica para Google Colab (extra; no reemplaza a `train.py`)      |
 
 ## Referencias
 
