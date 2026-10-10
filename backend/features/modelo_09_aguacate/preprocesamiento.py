@@ -11,7 +11,7 @@ INICIO = pd.Timestamp("2015-01-04")  # primera semana del dataset
 
 
 class CaracteristicasFecha(BaseEstimator, TransformerMixin):
-    """(region, tipo, fecha) -> (region, tipo, mes, semana, t).
+    """(region, tipo, fecha) -> (region, tipo, mes, semana, t); `semana` va de 1 a 52 según el día del año.
 
     `t` son los años transcurridos desde INICIO, **truncados al último valor visto en el entrenamiento**: el
     modelo no extrapola la tendencia a fechas futuras; para ellas conserva la estacionalidad (mes y semana)
@@ -32,6 +32,8 @@ class CaracteristicasFecha(BaseEstimator, TransformerMixin):
             "region": X["region"].to_numpy(),
             "tipo": X["tipo"].to_numpy(),
             "mes": fechas.dt.month.to_numpy(),
-            "semana": fechas.dt.isocalendar().week.astype(int).to_numpy(),
+            # Semana derivada del día del año (no la ISO): la ISO contradice al mes cerca de año nuevo
+            # (p. ej. el 31-dic puede caer en la semana ISO 1 y producir saltos de hasta 0.26 USD en un día).
+            "semana": np.minimum((fechas.dt.dayofyear - 1) // 7 + 1, 52).to_numpy(),  # 53 solo existe 1-2 días
             "t": np.minimum(self._anios(fechas).to_numpy(), self.t_max_),
         }, index=X.index)

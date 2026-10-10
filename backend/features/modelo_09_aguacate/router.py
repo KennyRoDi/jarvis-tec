@@ -53,7 +53,7 @@ def nombre_region(region: str) -> str:
     """'LosAngeles' -> 'Los Angeles'; 'TotalUS' -> 'todo Estados Unidos'."""
     if region == "TotalUS":
         return "todo Estados Unidos"
-    return re.sub(r"(?<=[a-z])(?=[A-Z])", " ", region).replace("Ft ", "Ft. ")
+    return re.sub(r"(?<=[a-z])(?=[A-Z])", " ", region).replace("Ft ", "Ft. ").replace("St ", "St. ")
 
 
 def fecha_en_texto(f: date) -> str:

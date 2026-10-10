@@ -95,7 +95,8 @@ def candidatos() -> dict[str, Pipeline]:
     ridge = lambda: RidgeCV(alphas=np.logspace(-2, 3, 20))  # noqa: E731
     bosque = lambda: RandomForestRegressor(n_estimators=100, min_samples_leaf=10, max_depth=14,  # noqa: E731
                                            random_state=SEMILLA, n_jobs=-1)
-    boosting = lambda: HistGradientBoostingRegressor(max_iter=200, learning_rate=0.05, random_state=SEMILLA)  # noqa: E731
+    boosting = lambda: HistGradientBoostingRegressor(max_iter=200, learning_rate=0.05, early_stopping=False,  # sin parada temprana: depende del tamaño
+                                                          random_state=SEMILLA)  # noqa: E731
     return {
         "efecto región y tipo (línea base)": armar(LinearRegression(), grupo, []),
         "ridge estacional": armar(ridge(), grupo + ["mes"], []),

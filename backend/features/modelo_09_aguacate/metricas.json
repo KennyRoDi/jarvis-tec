@@ -1,8 +1,8 @@
 {
   "metricas": {
-    "r2": 0.4053,
-    "mae": 0.2298,
-    "rmse": 0.304,
+    "r2": 0.4182,
+    "mae": 0.2267,
+    "rmse": 0.3006,
     "modelo": "gradient boosting + tendencia",
     "comparacion_cv": {
       "efecto región y tipo (línea base)": {
@@ -22,23 +22,23 @@
       },
       "random forest": {
         "cv_rmse": 0.33,
-        "cv_rmse_desv": 0.025,
-        "cv_r2": 0.359
+        "cv_rmse_desv": 0.024,
+        "cv_r2": 0.358
       },
       "random forest + tendencia": {
-        "cv_rmse": 0.34,
+        "cv_rmse": 0.337,
         "cv_rmse_desv": 0.008,
-        "cv_r2": 0.317
+        "cv_r2": 0.327
       },
       "gradient boosting": {
-        "cv_rmse": 0.3,
-        "cv_rmse_desv": 0.023,
-        "cv_r2": 0.469
+        "cv_rmse": 0.298,
+        "cv_rmse_desv": 0.021,
+        "cv_r2": 0.477
       },
       "gradient boosting + tendencia": {
         "cv_rmse": 0.288,
-        "cv_rmse_desv": 0.023,
-        "cv_r2": 0.506
+        "cv_rmse_desv": 0.019,
+        "cv_r2": 0.509
       }
     },
     "baseline": {
