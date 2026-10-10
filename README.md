@@ -51,7 +51,7 @@ El desarrollo sigue tres metodologías:
 
 ## Instalación
 
-Requisitos: Python 3.10+ y Node.js 20.19+.
+Requisitos: **Python 3.12+** (NumPy 2.5 no corre en 3.10 ni 3.11) y Node.js 20.19+.
 
 ```bash
 # Backend

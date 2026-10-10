@@ -38,7 +38,7 @@ usarse desde aquí: **vale 1 punto por modelo** (rubro Aplicación, 10 %).
 - Para trabajar sin backend: `VITE_USAR_MOCKS=true npm run dev`. Si cambia la spec, se actualiza `src/api/mocks.js`.
 - Para la app de escritorio: `npm run build`. FastAPI sirve `frontend/dist` automáticamente.
 - Cámara y micrófono: en Linux los concede `backend/core/escritorio.py` (verificado). **En Windows (WebView2)
-  está sin verificar**: probar al inicio y registrar el resultado aquí.
+  está sin verificar**: lo verificará el compañero (acordado el 2026-10-09); registrar el resultado aquí.
 
 ## Criterios de aceptación
 

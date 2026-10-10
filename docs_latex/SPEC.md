@@ -17,6 +17,14 @@ repositorio: se sube a Overleaf (o se sincroniza con su integración de GitHub).
 | 6 | Bibliografía                              | `referencias.bib`, al menos una referencia científica por modelo, más scikit-learn y Russell & Norvig |
 | 7 | Anexos                                    | Catálogo de comandos de voz, contrato de la API (resumen) y capturas de la interfaz |
 
+## Justificación obligatoria: Azure + Google Vision
+
+El profesor aceptó el uso de Google Vision para la emoción **siempre que se justifique**. Debe quedar en la
+sección 3 (agente de emociones) con: (1) evidencia del retiro de `emotion` en Azure Face (referencia a la
+documentación de Microsoft y captura del error real), (2) la cita del enunciado que permite APIs de Google para
+sentimientos en esta entrega, (3) el reparto de roles (Azure detecta, Google clasifica) y sus límites
+(4 de las 8 emociones del contrato, probabilidades en 5 niveles).
+
 ## Flujo de trabajo
 
 1. Cada modelo redacta su `analisis.md` (tono académico, tercera persona).
@@ -35,4 +43,5 @@ repositorio: se sube a Overleaf (o se sincroniza con su integración de GitHub).
 - [ ] Las 7 secciones completas: completo vale 10 pts, incompleto 3
 - [ ] 10 subsecciones de modelo con las 6 etapas cada una
 - [ ] Diseño de los agentes de emoción y de voz documentado
+- [ ] Justificación de Azure + Google Vision incluida (condición del profesor)
 - [ ] Compila en Overleaf sin errores

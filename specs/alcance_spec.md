@@ -11,7 +11,7 @@ Leyenda: ✅ cumplido · 🟡 estructura lista, falta implementar · ⏳ pendien
 | Requisito                                              | Cómo se cumple                                   | Estado |
 |--------------------------------------------------------|--------------------------------------------------|--------|
 | Máximo 3 integrantes                                   | 2 desarrolladores                                | ✅ |
-| Entrega en semana 11 (la tabla de entregas dice **semana 10**) | Confirmar la fecha con el profesor       | ❓ |
+| Entrega en semana 11 (la tabla de entregas dice **semana 10**) | Semana 11 tentativa (2026-10-09): puede moverse por un inconveniente aún no definido | 🟡 |
 | Documentación en Overleaf sin excepción                | `docs_latex/` → [SPEC](../docs_latex/SPEC.md)    | 🟡 |
 | Repositorio en Bitbucket, GitLab o GitHub con todo el proyecto | GitHub `KennyRoDi/jarvis-tec`            | ✅ |
 
@@ -36,13 +36,13 @@ Leyenda: ✅ cumplido · 🟡 estructura lista, falta implementar · ⏳ pendien
 | A3. Al menos 10 algoritmos de aprendizaje automático de la lista           | `backend/features/modelo_01 … modelo_10`, cada uno con su `SPEC.md`            | 🟡 1/10 |
 | A4. Conjunto de comandos asociados a los modelos (ej. JarvisTEC "tipo de cambio para mañana") | `MODELO_INFO["comandos"]` de cada modelo + catálogo en los anexos del documento | 🟡 |
 | A1 y A2 piden **diseñar un modelo de agente**                              | Diseño PEAS y tipo de agente en el documento → [docs_latex](../docs_latex/SPEC.md) | ⏳ |
-| Cámara y micrófono dentro de la app de escritorio                          | `core/escritorio.py` concede `getUserMedia` en Linux (verificado con webcam y micrófono reales). Windows sin verificar | 🟡 |
+| Cámara y micrófono dentro de la app de escritorio                          | `core/escritorio.py` concede `getUserMedia` en Linux (verificado con webcam y micrófono reales). Windows: lo verifica el compañero | 🟡 |
 
 ## Notas para la primera entrega
 
 | Nota                                                       | Cómo se cumple                                   | Estado |
 |------------------------------------------------------------|--------------------------------------------------|--------|
-| Usar Azure para reconocer rostros                          | Azure Face detecta el rostro; Google Vision da la emoción (opción 1) | 🟡 decidido el 2026-10-08, falta informar al profesor; ver [SPEC](../backend/features/vision_facial/SPEC.md) |
+| Usar Azure para reconocer rostros                          | Azure Face detecta el rostro; Google Vision da la emoción (opción 1) | 🟡 el profesor lo aceptó (2026-10-09) **si se justifica en el documento**; ver [SPEC](../backend/features/vision_facial/SPEC.md) |
 | Usar Speech-to-Text para pasar audio a texto               | `asistente_voz` con Google Cloud Speech-to-Text  | ⏳ |
 | Solo en esta entrega se permiten APIs de Google/Azure para sentimientos y voz | El contrato no depende del proveedor: en una etapa posterior se reemplaza la implementación sin tocar el frontend | ✅ diseño |
 

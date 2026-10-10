@@ -26,7 +26,10 @@ Conversión de probabilidad a puntaje: `VERY_UNLIKELY` 0.0 · `UNLIKELY` 0.25 ·
 Los rostros de ambos servicios se emparejan por posición (ordenados por `x`). Si Google no detecta un rostro
 que Azure sí, ese rostro va con `neutral` = 1.0.
 
-Pendiente: informar la decisión al profesor (evidencia: error de Azure al pedir `emotion`).
+**Profesor informado el 2026-10-09: lo aceptó siempre que se pueda justificar.** La justificación va en el
+documento (sección 3, agente de emociones): evidencia de que Azure ya no ofrece `emotion` (documentación de
+Microsoft sobre el retiro, y el error real de la API con el recurso del equipo, capturado en pantalla), el
+enunciado que permite APIs de Google para sentimientos en esta entrega, y el reparto de roles entre ambos servicios.
 
 ## Tareas
 
@@ -44,7 +47,8 @@ Tipo: agente reflejo simple (percepción → clasificación), cuyo resultado usa
 ## Criterios de aceptación
 
 - [x] Decisión del proveedor tomada y registrada en `specs/alcance_spec.md` y en `CLAUDE.md`
-- [ ] Decisión informada al profesor
+- [x] Decisión informada al profesor (aceptada con la condición de justificarla)
+- [ ] Evidencia para la justificación guardada: captura del error de Azure al pedir `emotion` en `docs_latex/figuras/` y la referencia al aviso de retiro de Microsoft en `referencias.bib`
 - [ ] Una foto real con un rostro devuelve `cantidad ≥ 1` y las 8 claves (prueba de integración con una
       imagen de muestra en `muestras/`, marcada con `skip` si no hay credenciales)
 - [ ] Una foto sin rostros devuelve `cantidad: 0`

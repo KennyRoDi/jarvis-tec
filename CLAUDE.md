@@ -69,20 +69,42 @@ PyWebView (ventana nativa)  ──►  http://127.0.0.1:8000/       interfaz web
 **Linux:** si se lanza desde la terminal del VS Code instalado por snap, GTK falla por bibliotecas de snap: usar una terminal normal. PyWebView usa GTK/WebKit2 del sistema (`python3-gi`, `gir1.2-webkit2-4.1`); crear el venv con
 `python3 -m venv --system-site-packages venv`. **Windows:** usa Edge WebView2, no requiere nada extra.
 
+## Notas operativas
+
+- **Entorno:** Python 3.12+. `kaggle` es solo una herramienta de descarga y no está en `requirements.txt`.
+- **Datos:** el `dataset.csv` de cada modelo está versionado; el S&P 500 completo (`data/all_stocks_5yr.csv`)
+  no. Se regeneran con `bash data/descargar_datasets.sh` (token de Kaggle en `~/.kaggle/`; en Windows, Git Bash).
+  Los SPEC de cada modelo traen trampas verificadas en los datos (p. ej. `Density` en grasa corporal y
+  `N_Days`/`Status` en cirrosis son fuga de información): leerlas antes de elegir variables.
+- **Un modelo está terminado** solo si cumple las tres cosas de la rúbrica: entrenado y documentado
+  (`analisis.md`), endpoint con prueba, y usable desde la interfaz. Ver `specs/alcance_spec.md`.
+- **Credenciales:** nunca en el repo ni en el chat. `backend/.env` y el JSON de Google viven en la máquina de
+  cada desarrollador. Sin ellas, voz y emoción responden 501; todo lo demás funciona.
+- **Cuotas gratuitas:** Azure Face F0 y Google Vision/Speech son limitadas (Vision, del orden de 1000 imágenes
+  al mes; verificar la cuota vigente en cada consola). Para no agotarlas: un frame cada 3–5 s como máximo,
+  llamar a Vision solo si Azure detectó un rostro, y desarrollar la interfaz con `VITE_USAR_MOCKS=true`.
+- **SDK de Azure:** `azure-cognitiveservices-vision-face` está deprecado, pero es el exigido por el equipo y
+  la detección de rostros funciona con él. No intentar obtener `emotion` de Azure.
+- **Git:** commits con Conventional Commits. `CONTRIBUTING.md` pide ramas `feature/...` y PR; hasta ahora
+  se subió directo a `main` solo cuando el usuario lo pidió explícitamente. No subir a `main` por iniciativa propia.
+- **Overleaf:** la sincronización con GitHub es de pago; el documento se sube a mano desde `docs_latex/`.
+- **Licencias:** los datasets de Kaggle tienen licencias distintas (CC0, ODbL, "copyright-authors"). Revisarlas
+  antes de hacer público el repositorio.
+
 ## Estado del proyecto
 
-_Actualizar al cerrar cada tarea._
+_Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede moverse por un inconveniente aún no definido; no planificar con holgura).
 
 | Componente                   | Estado                                                                 |
 |------------------------------|------------------------------------------------------------------------|
 | Contrato API                 | v0.1 (`specs/api_rest_spec.md`)                                        |
 | Ventana PyWebView + FastAPI  | ✅ `backend/main.py` (UI de prueba en `backend/ui_prueba/`)            |
-| Cámara/micrófono en la ventana | ✅ Linux (`core/escritorio.py`, verificado) · ⏳ Windows sin verificar |
+| Cámara/micrófono en la ventana | ✅ Linux (`core/escritorio.py`, verificado) · ⏳ Windows: lo verifica el compañero |
 | Registro automático features | ✅                                                                     |
 | Modelo 02 autos              | ✅ entrenado (R² 0.962)                                                |
 | Modelos 01, 03–10            | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
-| Emociones                    | ⏳ responde 501. Decidido: Azure detecta el rostro, Google Vision da la emoción |
+| Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |
 | Comandos de voz → modelo     | 🟡 reconoce el modelo; faltan parámetros y el tono según la emoción   |
 | Interfaz Jarvis (React)      | ⏳ scaffold de Vite + cliente API + mocks                              |
 | Documento LaTeX              | ⏳ esqueleto en `docs_latex/main.tex`                                  |
