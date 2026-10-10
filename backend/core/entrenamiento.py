@@ -46,6 +46,18 @@ def metricas_clasificacion(y_real, y_pred, orden=None) -> dict:
     }
 
 
+def umbral_optimo_f1(y_real, probabilidad, rejilla=None) -> float:
+    """Umbral de probabilidad que maximiza el F1 de la clase positiva (`y_real` con 1 = positivo).
+
+    Debe calcularse con probabilidades **fuera de muestra** (p. ej. `cross_val_predict` sobre el entrenamiento),
+    nunca con el conjunto de prueba. En caso de empate gana el umbral más bajo.
+    """
+    y = np.asarray(y_real).astype(bool)
+    rejilla = np.round(np.arange(0.05, 0.951, 0.01), 2) if rejilla is None else rejilla  # redondeada: sin ruido de coma flotante
+    puntajes = [metrics.f1_score(y, np.asarray(probabilidad) >= t, zero_division=0) for t in rejilla]
+    return round(float(rejilla[int(np.argmax(puntajes))]), 2)
+
+
 def guardar_modelo(carpeta: Path, pipeline, metricas: dict, entrada_ejemplo: dict, **extra) -> None:
     """Guarda modelo.joblib (lo usa el router) y metricas.json (lo usa /info y analisis.md)."""
     entrada_ejemplo = {k: (v.item() if isinstance(v, np.generic) else v) for k, v in entrada_ejemplo.items()}

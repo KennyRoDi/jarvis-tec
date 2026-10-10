@@ -1,0 +1,138 @@
+{
+  "metricas": {
+    "roc_auc": 0.8403,
+    "pr_auc": 0.6493,
+    "brier": 0.1378,
+    "orden_clases": [
+      "No",
+      "Yes"
+    ],
+    "umbral": 0.35,
+    "accuracy": 0.7693,
+    "precision_yes": 0.5525,
+    "recall_yes": 0.6898,
+    "f1_yes": 0.6136,
+    "precision_macro": 0.7147,
+    "recall_macro": 0.744,
+    "f1_macro": 0.7246,
+    "matriz_confusion": [
+      [
+        826,
+        209
+      ],
+      [
+        116,
+        258
+      ]
+    ],
+    "en_umbral_0_5": {
+      "umbral": 0.5,
+      "accuracy": 0.8013,
+      "precision_yes": 0.6556,
+      "recall_yes": 0.5294,
+      "f1_yes": 0.5858,
+      "precision_macro": 0.7483,
+      "recall_macro": 0.7145,
+      "f1_macro": 0.7275,
+      "matriz_confusion": [
+        [
+          931,
+          104
+        ],
+        [
+          176,
+          198
+        ]
+      ]
+    },
+    "calibracion": [
+      {
+        "prob_media": 0.011,
+        "tasa_real": 0.004
+      },
+      {
+        "prob_media": 0.057,
+        "tasa_real": 0.06
+      },
+      {
+        "prob_media": 0.142,
+        "tasa_real": 0.145
+      },
+      {
+        "prob_media": 0.263,
+        "tasa_real": 0.282
+      },
+      {
+        "prob_media": 0.452,
+        "tasa_real": 0.404
+      },
+      {
+        "prob_media": 0.67,
+        "tasa_real": 0.698
+      }
+    ],
+    "modelo": "random forest",
+    "comparacion_cv": {
+      "tasa base (línea base)": {
+        "cv_roc_auc": 0.5,
+        "cv_roc_auc_desv": 0.0,
+        "cv_pr_auc": 0.2654
+      },
+      "regresión logística": {
+        "cv_roc_auc": 0.8426,
+        "cv_roc_auc_desv": 0.011,
+        "cv_pr_auc": 0.6503
+      },
+      "random forest": {
+        "cv_roc_auc": 0.8452,
+        "cv_roc_auc_desv": 0.011,
+        "cv_pr_auc": 0.6553
+      },
+      "gradient boosting": {
+        "cv_roc_auc": 0.8387,
+        "cv_roc_auc_desv": 0.0116,
+        "cv_pr_auc": 0.6501
+      }
+    },
+    "baseline": {
+      "roc_auc": 0.5,
+      "accuracy": 0.7346,
+      "recall_yes": 0.0
+    },
+    "n_entrenamiento": 5634,
+    "n_prueba": 1409,
+    "experimento_variables": {
+      "18 (todas, sin total_charges)": {
+        "variables": 18,
+        "cv_roc_auc": 0.845,
+        "cv_roc_auc_desv": 0.0116
+      },
+      "9 (las elegidas)": {
+        "variables": 9,
+        "cv_roc_auc": 0.8426,
+        "cv_roc_auc_desv": 0.011
+      },
+      "6 mínimas": {
+        "variables": 6,
+        "cv_roc_auc": 0.8389,
+        "cv_roc_auc_desv": 0.0117
+      },
+      "3 (antigüedad, mensualidad, contrato)": {
+        "variables": 3,
+        "cv_roc_auc": 0.8276,
+        "cv_roc_auc_desv": 0.0126
+      }
+    }
+  },
+  "entrada_ejemplo": {
+    "tenure": 72,
+    "monthly_charges": 114.05,
+    "contract": "Two year",
+    "internet_service": "Fiber optic",
+    "payment_method": "Credit card (automatic)",
+    "paperless_billing": "Yes",
+    "tech_support": "Yes",
+    "online_security": "Yes",
+    "senior_citizen": "No"
+  }
+}

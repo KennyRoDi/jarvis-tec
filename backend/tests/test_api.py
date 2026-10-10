@@ -6,6 +6,7 @@ Ejecutar:  cd backend && pytest
 import pytest
 
 from core.modelos import REGISTRO
+from features.asistente_voz.comandos import interpretar
 
 
 def test_salud(cliente):
@@ -46,3 +47,10 @@ def test_modelo_no_entrenado_responde_503(cliente, assert_error):
         pytest.skip("todos los modelos están entrenados")
     respuesta = cliente.post(f"/api/modelos/{pendientes[0].info['slug']}/predecir", json={})
     assert_error(respuesta, 503, "MODELO_NO_ENTRENADO")
+
+
+def test_cada_comando_de_voz_se_asocia_a_su_propio_modelo():
+    """Los comandos no deben repetirse ni confundirse entre modelos (el intérprete elige la frase más larga)."""
+    for slug, modelo in REGISTRO.items():
+        for comando in modelo.info["comandos"]:
+            assert interpretar(comando)["modelo"] == slug, f"'{comando}' ({slug}) se asocia a otro modelo"
