@@ -24,12 +24,15 @@ densidad, pH, sulfatos y alcohol) y la puntuación.
 
 **Filas duplicadas.** Hay **1 168 filas idénticas (18 %)**. Si se dividen los datos sin eliminarlas, la misma
 muestra puede quedar en entrenamiento y en prueba, y la métrica mide la memoria del modelo y no su capacidad de
-generalizar. Se comprobó con un experimento: con el mismo modelo, la exactitud en prueba es **0.695** si se
-conservan los duplicados y **0.594** si se eliminan; es decir, 10 puntos inflados. Por eso se descartan antes de
-dividir. Quedan **5 329 filas** (3 970 blancos y 1 359 tintos).
+generalizar. Se comprobó con un experimento: al dividir **con** duplicados (prueba de 1 300 filas), 356 filas de prueba
+(27 %) tienen una copia exacta en el entrenamiento y la exactitud sube a **0.695**, frente a **0.594** al
+eliminarlos. Las dos particiones no son idénticas, de modo que no es una comparación pareada, pero el efecto
+(unos 10 puntos) es claro. Por eso se descartan antes de dividir. Quedan **5 329 filas** (3 970 blancos y 1 359 tintos).
 
 **Valores nulos.** Hay 38 valores nulos repartidos en 7 columnas y en 34 filas (0.6 % de las filas). Se imputan
-con la mediana **dentro del `Pipeline`**, de modo que la API aplique exactamente el mismo tratamiento.
+con la mediana **dentro del `Pipeline`**, de modo que en cada pliegue de validación la mediana se calcule solo con
+sus datos de entrenamiento. La API exige los 12 datos (no acepta valores nulos), por lo que el imputador protege el
+entrenamiento y cualquier uso directo del `Pipeline`, no las consultas de la aplicación.
 
 **Clases resultantes:** baja 37.4 % (1 991), media 43.7 % (2 327) y alta 19.0 % (1 011): moderadamente
 desbalanceadas, por lo que se usa F1 macro como métrica principal.
@@ -66,7 +69,7 @@ repetida (5 particiones × 2 repeticiones) con F1 macro como criterio [Sokolova2
 utilizó una única vez. El modelo elegido es **Random Forest** (100 árboles, `min_samples_leaf = 5`, profundidad
 máxima 16, pesos de clase balanceados).
 
-**Tamaño del modelo.** Un bosque más grande (150 árboles, `min_samples_leaf = 3`) alcanzaba un F1 de validación
+**Tamaño del modelo.** Un bosque más grande (150 árboles, `min_samples_leaf = 3`, profundidad máxima 18) alcanzaba un F1 de validación
 cruzada de 0.599, pero ocupaba 5.4 MB; la configuración adoptada rinde 0.595 y ocupa 2.9 MB. La diferencia de
 0.004 es mucho menor que la variación entre pliegues (0.012), por lo que se prefirió el modelo compacto, que se
 versiona en git.
@@ -125,8 +128,10 @@ reemplaza a la cata: los errores grandes son raros, pero cerca de 4 de cada 10 v
 equivocada. El alcohol, la acidez volátil y la densidad son las variables más informativas.
 
 El hallazgo metodológico principal es la **fuga por filas duplicadas**: sin eliminarlas la exactitud parece
-10 puntos mejor. La API incluye en la respuesta las probabilidades de cada clase y avisa cuando ninguna supera el
-50 %, para no presentar como firme una clasificación dudosa.
+unos 10 puntos mejor. La API incluye en la respuesta las probabilidades de cada clase y avisa cuando ninguna supera el
+50 %, para no presentar como firme una clasificación dudosa. También advierte cuando alguna medida queda fuera del rango
+de los vinos de entrenamiento (en las esquinas de lo permitido el modelo puede dar clasificaciones confiadas sin
+sentido) y rechaza combinaciones imposibles, como un dióxido de azufre libre mayor que el total.
 
 **Limitaciones.** (1) La puntuación sensorial es subjetiva: es un techo natural de lo que se puede predecir.
 (2) Solo se incluyen vinos verdes portugueses; el modelo no es válido para otras regiones ni variedades.

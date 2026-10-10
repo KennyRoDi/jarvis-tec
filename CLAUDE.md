@@ -110,6 +110,12 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   confusión con las clases en su orden natural y `texto` que avise cuando ninguna clase supera el 50 %.
 - **Tamaño del artefacto**: el `.joblib` se versiona en git; mantenerlo < 5 MB (con una prueba que lo vigile) y
   documentar el compromiso entre tamaño y rendimiento cuando se reduzca un ensamble.
+- **Control de mutaciones**: al terminar las pruebas de un modelo, romper a propósito cada protección (umbral de
+  aviso, límites de `Entrada`, estratificación, imputación, texto) y comprobar que alguna prueba falla. Las
+  pruebas que solo leen el artefacto guardado no detectan cambios en `train.py`: añadir también pruebas
+  estructurales sobre `candidatos()` / `dividir()`. Así se detectaron 8 pruebas débiles en el modelo 03.
+- Para avisar de extrapolación usar `core.modelos.fuera_de_rango` y guardar `rango=` en el artefacto (el modelo 08
+  aún tiene una copia local de esa lógica). La matriz de confusión se pide con `metricas_clasificacion(..., orden=...)`.
 - Cada modelo se entrega en su rama `feature/modelo-XX-slug` con PR; un subagente lo verifica de forma
   independiente (pruebas, fuga de información, métricas reproducibles, contrato, coherencia de documentos).
 

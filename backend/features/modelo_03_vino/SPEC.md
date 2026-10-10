@@ -15,7 +15,7 @@
 ## Datos
 
 - **Fuente:** https://www.kaggle.com/rajyellow46/wine-quality (`winequalityN.csv`)
-- **Archivo:** `dataset.csv` en esta carpeta. Si el original es grande, va en `data/` y aquí solo el recorte.
+- **Archivo:** `dataset.csv` en esta carpeta (390 KB).
 - ✅ Verificado: 6497 filas. Las columnas vienen con espacios (`fixed acidity`, `free sulfur dioxide`…): renombrar a `snake_case` en `train.py`. `quality` = 3:30, 4:216, 5:2138, 6:2836, 7:1079, 8:193, 9:5.
 - Variables: `type` (red/white, 1599/4898) más 11 fisicoquímicas (acidez, azúcar, cloruros, sulfitos, densidad, pH, sulfatos, alcohol).
 - Hay 38 nulos repartidos en 7 columnas (✅ verificado): imputar dentro del `Pipeline`.
@@ -24,7 +24,7 @@
 
 ## Enfoque sugerido
 
-- Candidatos: Random Forest, SVM (con escalado) y Regresión logística.
+- Candidatos evaluados: regresión logística, SVM, Random Forest y Gradient Boosting (ganó Random Forest).
 - Métrica principal: F1 macro, más la matriz de confusión.
 - Línea base: `DummyClassifier` (clase más frecuente).
 
@@ -35,8 +35,8 @@
 - **Salida:** `prediccion` clase (`baja`/`media`/`alta`) más `probabilidades` de las tres. `texto` avisa si ninguna supera el 50 %.
 - **¿Se ejecuta solo con la voz?** No: el comando abre el formulario.
 
-Cuando definas la entrada, quita `extra="allow"` de `Entrada` y usa `Field`/`Literal` con rangos y valores
-permitidos: de ahí sale el formulario de la interfaz (`esquema_entrada`).
+El formulario de la interfaz sale de `esquema_entrada` (generado desde `Entrada`). La API exige los 12 datos y rechaza
+`free_sulfur_dioxide > total_sulfur_dioxide`; avisa si una medida está fuera del rango de entrenamiento.
 
 ## Comandos de voz (`MODELO_INFO["comandos"]`)
 
