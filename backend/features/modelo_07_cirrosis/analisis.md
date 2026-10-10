@@ -30,11 +30,13 @@ etapas 1, 2, 3 y 4 en 21, 92, 155 y 144 pacientes.
 **Variables excluidas (por qué):**
 - `N_Days` y `Status`: son el **seguimiento posterior** (días hasta el fallecimiento o la censura y el estado final); no existen en
   la consulta inicial. La mediana de `N_Days` baja de 2 644 días en la etapa 1 a 1 207 en la 4, y fallecieron 10 % de los
-  pacientes de la etapa 1 y 58 % de los de la etapa 4. Medimos cuánta información aportan: **solas dan un F1 macro de 0.228**
-  (la línea base, 0.143) y **agregadas a las 15 variables no mejoran** el resultado (0.395 contra 0.398). No inflan la métrica,
-  pero se excluyen por principio: un asistente no puede preguntar por lo que ocurrirá después.
+  pacientes de la etapa 1 y 58 % de los de la etapa 4 (calculado sobre los 412 pacientes con etapa). Se midió cuánta información
+  aportan: **solas dan un F1 macro de 0.228 con la regresión logística** (línea base 0.143) y de 0.29 a 0.33 con el Random Forest
+  (un Random Forest ponderado con una columna de ruido ya da cerca de 0.23), y **agregadas a las 15 variables no mejoran** el
+  resultado (regresión logística: 0.395 contra 0.398; el Random Forest, comprobado de forma independiente con 3 semillas,
+  tampoco). No inflan la métrica, pero se excluyen por principio: un asistente no puede preguntar por lo que ocurrirá después.
 - `Drug`: tratamiento aleatorizado, que no depende de la etapa y está vacío en los 106 pacientes fuera del ensayo.
-- `ID`.
+- `ID` (orden de reclutamiento): correlaciona con la protrombina (deriva del laboratorio en el tiempo) pero no con la etapa.
 - La **edad** viene en días: se convierte a años (26.3 a 78.4; media 50.6).
 
 **Valores faltantes: ¿artefacto o señal?** Antes de decidir cómo tratar a los pacientes incompletos se comprobó que los vacíos
@@ -45,15 +47,21 @@ esta vía. Aun así, **los pacientes incompletos no ayudan** (sección 4) y se e
 
 ## 3. Exploración de los datos (0.5 pts)
 
+Las cifras de esta sección y las figuras corresponden a los **276 pacientes completos** (los que se usan para entrenar), salvo
+que se indique otra cosa.
+
 - `figuras/etapas.png`: la etapa 1 es muy rara (12 pacientes completos).
-- `figuras/laboratorio_por_etapa.png` y `figuras/signos_por_etapa.png`: los indicios de gravedad **crecen con la etapa**. Entre
-  las etapas 1 y 4, la mediana de bilirrubina sube de 0.8 a 2.6 mg/dL, la de albúmina baja de 3.8 a 3.3 g/dL, la de plaquetas de
-  271 a 216 y la de protrombina sube de 10.1 a 11.0 s. La hepatomegalia pasa de 0 % a 81 %, los angiomas en araña de 6 % a 46 %,
-  la ascitis de 0 % a 19 % y el edema (con o sin diuréticos) de 5 % a 28 %. Las etapas intermedias (2 y 3) son difíciles de
-  separar: sus medianas se parecen.
-- `figuras/seguimiento_posterior.png`: el seguimiento posterior muestra la misma tendencia (ver sección 2), pero no se usa.
-- Valores extremos: 5 pacientes con cobre mayor a 400, 5 con bilirrubina mayor a 20, 28 con fosfatasa alcalina mayor a 5 000. Son
-  posibles en esta enfermedad y se conservaron.
+- `figuras/laboratorio_por_etapa.png` y `figuras/signos_por_etapa.png`: los indicios de gravedad **crecen con la etapa**. Entre las
+  etapas 1 y 4, la mediana de bilirrubina sube de 0.75 a 2.95 mg/dL, la de albúmina baja de 3.74 a 3.36 g/dL, la de plaquetas de 268
+  a 231 y la de protrombina sube de 10.4 a 11.0 s. La hepatomegalia pasa de 0 % a 82 %, los angiomas en araña de 0 % a 47 %, la
+  ascitis de 0 % a 20 % y el edema (con o sin diuréticos) de 0 % a 28 %. Las etapas intermedias (2 y 3) son difíciles de separar:
+  sus medianas se parecen.
+- **Sesgo de selección.** Entre los completos, la ascitis solo aparece en la etapa 4 (19 de 19); en los 312 pacientes del ensayo hay 3
+  casos con ascitis fuera de la etapa 4 (2 en la etapa 2 y 1 en la 3) que quedaron excluidos por faltarles el colesterol o los
+  triglicéridos.
+- `figuras/seguimiento_posterior.png`: el seguimiento posterior (sobre los 412 pacientes) muestra la misma tendencia, pero no se usa.
+- Valores extremos (en los 412): 5 pacientes con cobre mayor a 400, 5 con bilirrubina mayor a 20 y 28 con fosfatasa alcalina mayor a
+  5 000. Son posibles en esta enfermedad y se conservaron.
 
 ## 4. Modelo (2 pts)
 
@@ -74,8 +82,29 @@ entrenamiento):
 | Regresión logística                                                 | 0.398 ± 0.063   | 0.400 ± 0.064   |
 | Random Forest                                                       | 0.460 ± 0.083   | 0.445 ± 0.091   |
 
-Las 7 variables básicas rinden mucho peor, y sumar los pacientes incompletos no aporta nada: se usan las **15 variables** y
-**solo los pacientes completos**, sin imputación posible de artefactos.
+Las 7 variables básicas rinden mucho peor, y sumar los pacientes incompletos no aporta nada: con 8 particiones distintas la
+regresión logística empeora al sumarlos en 7 de 8 (−0.03 en promedio) y el Random Forest no cambia (+0.003). La conclusión "no
+mejoran" es firme; el signo exacto del cambio, no. Se usan las **15 variables** y **solo los pacientes completos**, sin que
+ninguna imputación entre al ajuste.
+
+**¿Qué variables usa realmente el modelo?** Las medianas de la sección 3 describen los datos, no al modelo. Se midió cuánto
+cambia el F1 macro de la regresión logística (validación cruzada 5 × 4, solo entrenamiento) **al quitar cada variable**, respecto
+de las 15 (0.398):
+
+| Al quitar…           | Cambio del F1 macro |
+|----------------------|---------------------|
+| edad                 | −0.026              |
+| SGOT                 | −0.025              |
+| hepatomegalia        | −0.021              |
+| triglicéridos        | −0.016              |
+| colesterol, albúmina, ascitis | −0.005 a −0.001 |
+| edema, cobre, angiomas, sexo, bilirrubina, plaquetas, fosfatasa alcalina, protrombina | +0.002 a +0.013 |
+
+**Ninguna variable aporta por sí sola más de 0.026**, menos que la desviación entre pliegues (≈ 0.06): el modelo reparte su
+información entre variables redundantes. Quitar la bilirrubina, el edema, las plaquetas o la protrombina no lo empeora. Una
+comprobación independiente con el Random Forest coincidió en que la hepatomegalia es la variable más consistentemente útil, y mostró
+que el efecto de la bilirrubina y del edema sobre la etapa estimada es casi nulo (con la bilirrubina multiplicada por 3, la etapa
+esperada sube solo en 61 % de los pacientes).
 
 **Candidatos.** Cada uno es un `Pipeline` (imputación, escalado y codificación *one-hot*), con **clases ponderadas** porque la
 etapa 1 tiene solo 10 pacientes en el entrenamiento; por eso los puntajes **no son probabilidades calibradas**:
@@ -130,34 +159,52 @@ Matriz de confusión (filas: etapa real; columnas: etapa estimada; `figuras/matr
 | **Etapa 4**| 0 | 3 | 10 | 6 |
 
 **Una advertencia sobre las métricas ordinales.** En la prueba, **la línea base (predecir siempre la etapa 3) tiene mejor error
-medio (0.625 contra 0.696) y más aciertos a una etapa (0.964 contra 0.875)** que el modelo, porque la etapa 3 está en el
-centro: casi cualquier etapa real queda a una de distancia. La ponderación de clases lleva al modelo hacia los extremos, lo que
-mejora el F1 macro y el kappa (0.34 contra 0), pero empeora esas dos métricas. Por eso no deben leerse aisladas.
+medio (0.625 contra 0.696) y más aciertos a una etapa (0.964 contra 0.875)** que el modelo, porque la etapa 3 está en el centro:
+casi cualquier etapa real queda a una de distancia. **Lo mismo ocurre fuera de muestra** en los aciertos a una etapa (línea base
+0.955 contra 0.927 del modelo, y el modelo queda por debajo en las 8 particiones probadas). En el error medio fuera de muestra el
+modelo sí gana (0.564 contra 0.645). La ponderación de clases **no es la causa principal**: un Random Forest sin ponderar tiene en la
+misma prueba error medio 0.679 y aciertos a una etapa de 0.893 (también pierde contra la línea base); ponderar sube el F1 macro de
+0.27 a 0.47 y el kappa de 0.10 a 0.34 a un costo de unos 0.02 en esas dos métricas. Ninguna métrica debe leerse aislada.
 
 **Estimaciones menos ruidosas (predicciones fuera de muestra del entrenamiento, 220 pacientes).** Exactitud 0.509, F1 macro 0.484,
-kappa cuadrático 0.531, aciertos a una etapa 0.927 y error medio 0.564 (predecir siempre la etapa 3 daría 0.645 en esos
-mismos pacientes). Recall por etapa: **1: 0.40; 2: 0.43; 3: 0.38; 4: 0.73**. La etapa 4 (cirrosis) es la que mejor se reconoce.
+kappa cuadrático 0.531, aciertos a una etapa 0.927 y error medio 0.564. Recall por etapa: **1: 0.40; 2: 0.43; 3: 0.38; 4: 0.73**.
+
+**El recall de la etapa 4: 0.32 en la prueba, 0.73 fuera de muestra.** La partición publicada (semilla 42) es especialmente
+pesimista para la etapa 4: en la prueba 10 de sus 19 pacientes se estimaron como etapa 3 (recall 0.32). Con 8 particiones
+distintas (semillas 0 a 7), el recall de la etapa 4 en la prueba va de 0.58 a 0.74 (media 0.68) y fuera de muestra de 0.65 a 0.73.
+El de la etapa 1 (2 pacientes en la prueba; 10 en el entrenamiento) es puro ruido: fuera de muestra va de 0.2 a 0.7 según la semilla.
+
+**Sensibilidad a la partición (8 particiones, semillas 0 a 7; comprobación independiente).** El Random Forest gana la validación
+cruzada en las 8. En la prueba, su F1 macro va de 0.31 a 0.57 (media 0.45; el publicado, 0.465, es típico), el kappa de 0.33 a 0.62
+(media 0.45; el publicado, 0.34, es pesimista) y el error medio de 0.48 a 0.66 (media 0.60; el publicado, 0.696, es peor que
+los 8). Fuera de muestra, el F1 macro va de 0.41 a 0.53 y el kappa de 0.46 a 0.58.
 
 ## 6. Conclusión (0.5 pts)
 
-Estimar la etapa histológica solo con la consulta inicial es **difícil**: el F1 macro es de aproximadamente 0.46–0.48 y la
-exactitud, de 0.43–0.51, con un kappa de 0.34 a 0.53. El modelo **distingue bien los extremos** (la etapa 4 con recall de
-0.73 fuera de muestra) y se equivoca por una etapa o menos en cerca de 9 de cada 10 casos fuera de muestra, pero **confunde las
-etapas intermedias 2 y 3**, que tienen perfiles de laboratorio parecidos. Los signos clínicos (hepatomegalia, angiomas en araña,
-ascitis, edema) y la bilirrubina, la albúmina, las plaquetas y la protrombina son las señales más claras.
+Estimar la etapa histológica solo con la consulta inicial es **difícil**: el F1 macro es de aproximadamente 0.45–0.48 y la
+exactitud, de 0.43–0.51, con un kappa de 0.34 a 0.53. El modelo **distingue mejor el extremo de la etapa 4** (recall de 0.73 fuera
+de muestra y de 0.58 a 0.74 en otras particiones, aunque 0.32 en la prueba publicada) y se equivoca por una etapa o menos en cerca de
+9 de cada 10 casos fuera de muestra (**la línea base "siempre etapa 3" lo logra en 95 %**, de modo que esa cifra por sí sola no
+demuestra nada). **Confunde las etapas intermedias 2 y 3**, que tienen perfiles de laboratorio parecidos.
 
-Los hallazgos metodológicos principales fueron (1) comprobar antes de afirmar: las variables de seguimiento posterior
-(`N_Days`, `Status`) se excluyeron por principio, pero se midió que **no inflaban** el resultado, de modo que no se afirma
-una fuga que no se observó; (2) que los pacientes incompletos no aportan y los vacíos no dependen de la etapa; y (3) que con una
-etapa ordinal conviene mirar varias métricas, porque predecir siempre la categoría central gana en error medio.
+Los indicios de gravedad de la sección 3 (bilirrubina, albúmina, plaquetas, ascitis, edema) **describen** los datos, pero el
+modelo casi no se apoya en ellos: ninguna variable aporta por sí sola más de 0.026 de F1, y las que más pesan son la edad, el SGOT, la
+hepatomegalia y los triglicéridos.
 
-**Limitaciones.** (1) **No es un diagnóstico.** (2) Son solo 276 pacientes completos y la etapa 1 tiene 12: en la prueba hay 2,
-por lo que su recall perfecto (1.0) no significa nada; los intervalos de confianza son muy amplios. (3) Son datos de un único
-ensayo de 1974–1984, con 90 % de mujeres, sin validación externa y con un tratamiento que ya no es el estándar. (4) Los puntajes
-no son probabilidades calibradas (se ponderaron las clases). (5) Las unidades del formulario (mg/dL, g/dL, µg/día, U/L, U/mL,
-miles por mL, segundos) provienen de la documentación del conjunto de datos y deben confirmarse. (6) La biopsia tiene variabilidad
-entre observadores, por lo que la etapa de referencia tiene ruido. (7) Con una prueba de 56 pacientes, los resultados cambiarían
-con otra partición.
+Los hallazgos metodológicos principales fueron (1) comprobar antes de afirmar: `N_Days` y `Status` se excluyeron por principio, pero se
+midió que **no inflaban** el resultado, de modo que no se afirma una fuga que no se observó; (2) que los pacientes incompletos no aportan
+y los vacíos no dependen de la etapa; (3) que describir los datos (medianas por etapa) no es lo mismo que medir lo que el modelo usa
+(quitar cada variable); y (4) que con una etapa ordinal conviene mirar varias métricas, porque predecir siempre la categoría central gana
+en error medio y en aciertos a una etapa.
+
+**Limitaciones.** (1) **No es un diagnóstico.** (2) Son solo 276 pacientes completos y la etapa 1 tiene 12: en la prueba hay 2, por lo
+que su recall perfecto (1.0) no significa nada; los intervalos de confianza son muy amplios y el recall por etapa depende de la
+partición. (3) Son datos de un único ensayo de 1974–1984, con cerca de 90 % de mujeres, sin validación externa y con un tratamiento que ya
+no es el estándar. (4) Los puntajes no son probabilidades calibradas (se ponderaron las clases). (5) Las unidades del formulario (mg/dL,
+g/dL, µg/día, U/L, 10³/µL, segundos) se infirieron de la documentación del conjunto y de los rangos de los datos, y deben confirmarse. (6) La
+biopsia tiene variabilidad entre observadores, por lo que la etapa de referencia tiene ruido. (7) Sesgo de selección por entrenar solo con
+completos (por ejemplo, 3 casos de ascitis fuera de la etapa 4 quedaron excluidos). (8) La API exige los 15 datos: no hay forma de
+consultar con datos parciales.
 
 ## Referencias (en `docs_latex/referencias.bib`)
 

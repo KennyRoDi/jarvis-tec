@@ -19,7 +19,7 @@
 - ✅ Verificado: 418 pacientes (`Stage` 1:21, 2:92, 3:155, 4:144, 6 nulos que se descartan → 412). 312 participaron en el ensayo aleatorizado y 106 no (sin ascitis, hepatomegalia, angiomas, cobre, fosfatasa alcalina ni SGOT: 100 de ellos con etapa).
 - ✅ Los vacíos **no dependen de la etapa** (distribución de etapas casi idéntica en el bloque y fuera de él) y los pacientes incompletos **no mejoran el modelo**: se entrena solo con los **276 completos** (etapas 12, 59, 111 y 94).
 - `Age` viene en días (9598–28650): convertir a años. `Edema` toma `Y`/`N`/`S`; `Status` toma `C`/`D`/`CL`.
-- `N_Days` y `Status` describen el seguimiento posterior, no el estado del paciente al consultar: **se excluyen** (por principio). ✅ Medido: **no inflan** la métrica (con ellas 0.395, sin ellas 0.398; solas, 0.228): no afirmar una fuga que no se observó. `Drug` e `ID` también se excluyen.
+- `N_Days` y `Status` describen el seguimiento posterior, no el estado del paciente al consultar: **se excluyen** (por principio). ✅ Medido: **no inflan** la métrica (con ellas 0.395, sin ellas 0.398 con la regresión logística; solas, 0.228 y 0.29–0.33 con el Random Forest): no afirmar una fuga que no se observó. `Drug` e `ID` también se excluyen.
 
 ## Enfoque sugerido
 

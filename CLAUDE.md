@@ -163,6 +163,13 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
 - **Métricas ordinales** (etapas): kappa cuadrático, error medio y aciertos a ±1; la línea base "siempre la categoría central" gana en las dos
   últimas, así que no deben leerse aisladas. Probar siempre la línea base con cada métrica.
 - **Pacientes incompletos**: probar entrenar solo con completos frente a añadir los incompletos imputados en los **mismos pliegues** de completos.
+- **Describir los datos no es medir lo que el modelo usa** (modelo 07): las medianas por etapa mostraban bilirrubina, albúmina y signos
+  "claros", pero al quitar cada variable ninguna aportaba más de 0.026 de F1. Incluir siempre un experimento "quitar cada variable"
+  antes de afirmar qué señales importan.
+- **Documentar la población de cada cifra** (todos los pacientes / solo los completos) y que coincida con la de las figuras; citar el recall
+  por clase **en la prueba, fuera de muestra y con otras particiones** (el de la etapa 4: 0.32, 0.73 y 0.58–0.74) y decir cuál es la publicada.
+- **Probar las unidades y descripciones del formulario** (una prueba por campo): se corrigieron SGOT (U/L) y plaquetas (10³/µL).
+- Probar también `entender()` y `explorar()` (con `capsys` y `tmp_path`): sin pruebas, mutarlas pasa inadvertido.
 - **Artefacto contra señal** (modelos 05 y 06): ante un valor faltante sospechoso, reajustar con (a) la variable quitada, (b) los vacíos
   rellenados **al azar con valores observados** y (c) solo el indicador de faltante. Si el aporte desaparece con (b), es un artefacto
   (el `bmi` del 05); si sobrevive, es señal (el ALP del 06). No concluir por analogía: el 06 lo hizo y la revisión lo corrigió.
