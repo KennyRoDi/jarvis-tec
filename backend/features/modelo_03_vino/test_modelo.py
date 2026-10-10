@@ -1,13 +1,22 @@
 """Pruebas del modelo 03 · vino (specs/api_rest_spec.md §3). Usan el modelo entrenado real."""
+import shutil
+
 import joblib
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
+from sklearn.dummy import DummyClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
+from sklearn.svm import SVC
 
-from core.modelos import REGISTRO, leer_metricas, predecir_con_pipeline
-from features.modelo_03_vino.router import CARPETA, ORDEN, Entrada
-from features.modelo_03_vino.train import NUMERICAS, OBJETIVO, VARIABLES, agrupar_calidad, candidatos, cargar_datos, dividir
+from core.modelos import REGISTRO, cargar_artefacto, leer_metricas, predecir_con_pipeline
+from features.modelo_03_vino import train
+from features.modelo_03_vino.router import CARPETA, ORDEN, UMBRAL_POCO_CONCLUYENTE, Entrada
+from features.modelo_03_vino.train import (NUMERICAS, OBJETIVO, SEMILLA, VARIABLES, agrupar_calidad, candidatos, cargar_datos, dividir, elegibles, entender,
+                                           entrenar, explorar, sin_duplicados)
 
 URL = "/api/modelos/vino/predecir"
 ENTRADA = {
@@ -17,6 +26,12 @@ ENTRADA = {
 }
 ESQUINA = {**ENTRADA, "fixed_acidity": 3, "ph": 4.2, "sulphates": 2.1, "alcohol": 15.5}  # en el borde de lo permitido
 entrenado = pytest.mark.skipif(not REGISTRO["vino"].entrenado, reason="ejecutar features.modelo_03_vino.train")
+
+
+@pytest.fixture(scope="module")
+def reentrenado():
+    """Todo el entrenamiento (selección, evaluación, experimento de duplicados) en memoria, sin escribir nada."""
+    return entrenar(cargar_datos(quitar_duplicados=False), figuras=None, imprimir=False)
 
 
 def probabilidades(fila: dict) -> dict:
@@ -171,3 +186,233 @@ def test_info_incluye_metricas_matriz_y_esquema(cliente):
 @entrenado
 def test_el_artefacto_no_es_excesivo():
     assert (CARPETA / "modelo.joblib").stat().st_size < 5_000_000
+
+
+# --- Datos y candidatos (no requieren el modelo entrenado) ---
+
+def test_los_datos_crudos_tienen_duplicados_y_nulos_documentados():
+    crudo = cargar_datos(quitar_duplicados=False)
+    assert len(crudo) == 6497 and crudo.tipo.value_counts().to_dict() == {"white": 4898, "red": 1599}
+    assert int(crudo.duplicated().sum()) == 1168 and len(sin_duplicados(crudo)) == 5329
+    limpio = cargar_datos()
+    assert limpio[VARIABLES].isna().sum()[lambda s: s > 0].to_dict() == {"fixed_acidity": 10, "volatile_acidity": 8, "citric_acid": 3,
+                                                                          "residual_sugar": 2, "chlorides": 2, "ph": 9, "sulphates": 4}
+    assert int(limpio[VARIABLES].isna().any(axis=1).sum()) == 34
+    assert limpio[OBJETIVO].value_counts().to_dict() == {"media": 2327, "baja": 1991, "alta": 1011}
+
+
+def test_los_nombres_de_las_columnas_estan_normalizados():
+    assert VARIABLES == NUMERICAS + ["tipo"] and len(NUMERICAS) == 11
+    assert {"fixed_acidity", "free_sulfur_dioxide", "total_sulfur_dioxide", "ph"} <= set(NUMERICAS) and "quality" not in cargar_datos()[VARIABLES]
+
+
+def test_los_candidatos_son_una_linea_base_y_cuatro_modelos():
+    c = candidatos()
+    assert list(c) == ["mayoritaria (línea base)", "regresión logística", "svm rbf", "random forest", "gradient boosting"]
+    modelos = {n: p.named_steps["modelo"] for n, p in c.items()}
+    assert isinstance(modelos["mayoritaria (línea base)"], DummyClassifier) and isinstance(modelos["regresión logística"], LogisticRegression)
+    assert isinstance(modelos["svm rbf"], SVC) and isinstance(modelos["random forest"], RandomForestClassifier)
+    assert isinstance(modelos["gradient boosting"], HistGradientBoostingClassifier) and modelos["gradient boosting"].early_stopping is False
+    bosque = modelos["random forest"]
+    assert (bosque.n_estimators, bosque.min_samples_leaf, bosque.max_depth, bosque.class_weight) == (100, 5, 16, "balanced_subsample")
+    assert modelos["svm rbf"].C == 3 and modelos["svm rbf"].class_weight == "balanced"
+
+
+def test_la_svm_no_estima_probabilidades_y_por_eso_no_puede_ser_el_modelo_elegido():
+    """`probability=True` está deprecado en scikit-learn 1.9: sin él la SVM no ofrece `predict_proba`, que la API necesita."""
+    c = candidatos()
+    assert not hasattr(c["svm rbf"], "predict_proba") and c["svm rbf"].named_steps["modelo"].probability in (False, "deprecated")
+    for nombre in ("regresión logística", "random forest", "gradient boosting"):
+        assert hasattr(c[nombre], "predict_proba"), nombre
+
+
+def test_solo_pueden_ser_elegidos_los_modelos_que_calculan_probabilidades():
+    assert elegibles() == ["regresión logística", "random forest", "gradient boosting"]
+
+
+def test_el_entrenamiento_no_emite_avisos_de_deprecacion(recwarn):
+    X_train, _, y_train, _ = dividir(cargar_datos())
+    candidatos()["svm rbf"].fit(X_train.head(300), y_train.head(300))
+    assert not [w for w in recwarn if issubclass(w.category, FutureWarning)]
+
+
+def test_las_clases_estan_ponderadas_salvo_la_linea_base_y_el_orden_natural():
+    assert ORDEN == ("baja", "media", "alta") and train.ORDEN == list(ORDEN)
+    c = candidatos()
+    assert c["regresión logística"].named_steps["modelo"].class_weight == "balanced"
+    assert c["gradient boosting"].named_steps["modelo"].class_weight == "balanced"
+
+
+def test_entender_y_explorar(capsys, tmp_path):
+    crudo = cargar_datos(quitar_duplicados=False)
+    entender(cargar_datos(), len(crudo))
+    salida = capsys.readouterr().out
+    assert "Filas crudas: 6497  Filas sin duplicados: 5329 (1168 duplicadas descartadas)" in salida
+    assert "filas con algún nulo: 34" in salida and "{'baja': 0.374, 'media': 0.437, 'alta': 0.19}" in salida
+    explorar(cargar_datos(), tmp_path)
+    assert sorted(p.name for p in tmp_path.glob("*.png")) == ["clases.png", "correlacion.png", "variables_por_clase.png"]
+    assert "alcohol" in capsys.readouterr().out
+
+
+# --- Entrada estricta, límites, descripciones y textos ---
+
+LIMITES = {"fixed_acidity": (3, 17), "volatile_acidity": (0.05, 2), "citric_acid": (0, 2), "residual_sugar": (0.3, 70), "chlorides": (0.005, 0.7),
+           "free_sulfur_dioxide": (0.5, 320), "total_sulfur_dioxide": (5, 460), "density": (0.98, 1.05), "ph": (2.6, 4.2),
+           "sulphates": (0.2, 2.1), "alcohol": (7.5, 15.5)}
+
+
+def test_la_entrada_es_estricta_y_los_12_campos_son_obligatorios():
+    esquema = Entrada.model_json_schema()
+    assert esquema.get("additionalProperties") is False and set(esquema["required"]) == set(ENTRADA) == set(VARIABLES)
+
+
+@pytest.mark.parametrize("cambio", [{"alcohol": "10.5"}, {"alcohol": True}, {"alcohol": None}, {"tipo": "White"}, {"tipo": 1}, {"calidad": "alta"},
+                                    {"quality": 6}, {"ph": "3.2"}])
+def test_tipos_laxos_y_campos_desconocidos_dan_422(cliente, assert_error, cambio):
+    assert_error(cliente.post(URL, json={**ENTRADA, **cambio}), 422, "VALIDACION")
+
+
+@pytest.mark.parametrize("campo", list(LIMITES))
+def test_el_limite_de_cada_campo_es_inclusivo_y_rechaza_lo_que_lo_excede(campo):
+    minimo, maximo = LIMITES[campo]
+    base = {**ENTRADA, "free_sulfur_dioxide": 5.0, "total_sulfur_dioxide": 400.0} if "sulfur" in campo else ENTRADA
+    for dentro in (minimo, maximo):
+        if campo == "free_sulfur_dioxide" and dentro > 400:
+            continue
+        Entrada(**{**base, campo: float(dentro)})
+    for fuera in (minimo - 0.001, maximo + 0.001):
+        with pytest.raises(ValidationError):
+            Entrada(**{**base, campo: float(fuera)})
+
+
+def test_el_dioxido_de_azufre_libre_puede_igualar_pero_no_superar_al_total():
+    Entrada(**{**ENTRADA, "free_sulfur_dioxide": 50.0, "total_sulfur_dioxide": 50.0})
+    with pytest.raises(ValidationError, match="free_sulfur_dioxide"):
+        Entrada(**{**ENTRADA, "free_sulfur_dioxide": 50.1, "total_sulfur_dioxide": 50.0})
+
+
+@pytest.mark.parametrize("campo", VARIABLES)
+def test_cada_campo_tiene_descripcion_y_un_ejemplo_valido(campo):
+    info = Entrada.model_fields[campo]
+    assert info.description and info.examples
+    Entrada(**{**ENTRADA, campo: info.examples[0]})
+
+
+@pytest.mark.parametrize("campo, unidad", [("fixed_acidity", "g/dm³"), ("residual_sugar", "g/dm³"), ("free_sulfur_dioxide", "mg/dm³"),
+                                           ("total_sulfur_dioxide", "mg/dm³"), ("density", "g/cm³"), ("alcohol", "% vol.")])
+def test_las_unidades_del_formulario(campo, unidad):
+    assert unidad in Entrada.model_fields[campo].description
+
+
+# --- Modelo entrenado y API ---
+
+@entrenado
+def test_el_modelo_elegido_las_metricas_y_el_experimento_de_duplicados_publicados():
+    m = leer_metricas(CARPETA)["metricas"]
+    assert m["modelo"] == "random forest" and (m["n_entrenamiento"], m["n_prueba"]) == (4263, 1066)
+    cv = m["comparacion_cv"]
+    assert cv[m["modelo"]]["cv_f1_macro"] == max(v["cv_f1_macro"] for n, v in cv.items() if "línea base" not in n)
+    e = m["experimento_duplicados"]
+    assert e["filas_duplicadas"] == 1168 and e["prueba_con_copia_en_entrenamiento"] == 356 and e["accuracy_con_duplicados"] > m["accuracy"] + 0.08
+
+
+@entrenado
+def test_el_artefacto_guarda_el_rango_de_las_11_medidas_y_las_variables():
+    a = cargar_artefacto(CARPETA, "vino")
+    X_train, _, _, _ = dividir(cargar_datos())
+    assert a["variables"] == VARIABLES and set(a["rango"]) == set(NUMERICAS)
+    for campo, (minimo, maximo) in a["rango"].items():
+        assert (minimo, maximo) == (X_train[campo].min(), X_train[campo].max()), campo
+
+
+@entrenado
+def test_las_probabilidades_del_texto_van_en_el_orden_de_calidad_y_coinciden_con_las_de_la_respuesta(cliente):
+    cuerpo = cliente.post(URL, json=ENTRADA).json()
+    posiciones = [cuerpo["texto"].index(f"{c} {round(cuerpo['probabilidades'][c] * 100)} %") for c in ORDEN]
+    assert posiciones == sorted(posiciones)
+    assert f"con una probabilidad del {round(cuerpo['probabilidades'][cuerpo['prediccion']] * 100)} por ciento" in cuerpo["texto"]
+
+
+@entrenado
+@pytest.mark.parametrize("clase", ORDEN)
+def test_el_texto_da_la_probabilidad_de_la_clase_predicha_para_cada_clase(cliente, clase):
+    """Busca vinos reales que el modelo clasifique en cada clase: el porcentaje del texto es el de esa clase y no el de otra."""
+    filas = cargar_datos().dropna(subset=NUMERICAS).sample(400, random_state=1)[VARIABLES].to_dict("records")
+    fila = next(f for f in filas if predecir_con_pipeline(CARPETA, "vino", f)[0] == clase)
+    cuerpo = cliente.post(URL, json=fila).json()
+    assert cuerpo["prediccion"] == clase
+    assert f"calidad {clase}, con una probabilidad del {round(cuerpo['probabilidades'][clase] * 100)} por ciento" in cuerpo["texto"]
+
+
+@entrenado
+def test_el_umbral_de_poco_concluyente_es_el_50_por_ciento():
+    assert UMBRAL_POCO_CONCLUYENTE == 0.5
+
+
+@entrenado
+def test_el_aviso_de_extrapolacion_se_dispara_con_una_sola_medida_fuera_del_rango(cliente):
+    rango = cargar_artefacto(CARPETA, "vino")["rango"]
+    for campo in ("alcohol", "residual_sugar", "chlorides"):
+        minimo, maximo = rango[campo]
+        lejos = min(maximo + (maximo - minimo) * 0.2, LIMITES[campo][1])
+        assert "poco confiable" in cliente.post(URL, json={**ENTRADA, campo: lejos}).json()["texto"], campo
+        assert "poco confiable" not in cliente.post(URL, json={**ENTRADA, campo: min(max(ENTRADA[campo], minimo), maximo)}).json()["texto"], campo
+
+
+@entrenado
+def test_la_api_no_altera_la_entrada_y_devuelve_lo_mismo_que_el_pipeline(cliente):
+    cuerpo = cliente.post(URL, json=ENTRADA).json()
+    clase, probs = predecir_con_pipeline(CARPETA, "vino", ENTRADA)
+    assert cuerpo["prediccion"] == clase and cuerpo["probabilidades"] == probs
+
+
+@entrenado
+def test_los_metadatos_del_modelo_registrado():
+    info = REGISTRO["vino"].info
+    assert info["slug"] == "vino" and info["tipo"] == "clasificacion" and info["unidad"] is None
+    assert info["comandos"] == ["calidad del vino", "clasificar vino", "que tan bueno es el vino"] and REGISTRO["vino"].entrada is Entrada
+
+
+# --- Entrenamiento (sin tocar el disco) ---
+
+def test_entrenar_devuelve_todo_lo_que_despues_se_publica(reentrenado):
+    assert set(reentrenado) == {"pipeline", "metricas", "rango", "entrada_ejemplo"}
+    assert set(reentrenado["entrada_ejemplo"]) == set(VARIABLES)
+
+
+def test_el_modelo_elegido_ofrece_probabilidades_y_no_es_la_linea_base(reentrenado):
+    assert hasattr(reentrenado["pipeline"], "predict_proba") and "línea base" not in reentrenado["metricas"]["modelo"]
+
+
+def test_el_entrenamiento_no_usa_la_prueba_ni_para_elegir_ni_para_ajustar(reentrenado):
+    """Se alteran las medidas de las filas de prueba (la partición solo depende de las etiquetas): la selección por validación
+    cruzada y el modelo elegido no deben cambiar."""
+    base = sin_duplicados(cargar_datos(quitar_duplicados=False))
+    _, X_test, _, _ = dividir(base)
+    base.loc[X_test.index, "alcohol"] = base.loc[X_test.index, "alcohol"] * 2
+    otro = entrenar(base, figuras=None, imprimir=False)
+    assert otro["metricas"]["comparacion_cv"] == reentrenado["metricas"]["comparacion_cv"] and otro["metricas"]["modelo"] == reentrenado["metricas"]["modelo"]
+    assert otro["metricas"]["accuracy"] != reentrenado["metricas"]["accuracy"]
+
+
+def test_main_escribe_el_artefacto_las_metricas_y_las_figuras(tmp_path, monkeypatch, capsys):
+    shutil.copy(train.CARPETA / "dataset.csv", tmp_path / "dataset.csv")
+    monkeypatch.setattr(train, "CARPETA", tmp_path)
+    train.main()
+    a = joblib.load(tmp_path / "modelo.joblib")
+    assert a["variables"] == VARIABLES and set(a["rango"]) == set(NUMERICAS) and (tmp_path / "metricas.json").exists()
+    assert sorted(p.name for p in (tmp_path / "figuras").glob("*.png")) == ["clases.png", "correlacion.png", "matriz_confusion.png", "variables_por_clase.png"]
+    salida = capsys.readouterr().out
+    assert "Modelo elegido: random forest" in salida and "Filas crudas: 6497" in salida and "Por clase:" in salida
+
+
+@pytest.mark.reproduce
+@entrenado
+def test_reentrenar_reproduce_exactamente_lo_publicado(reentrenado):
+    """Cubre todo `entrenar()`: selección, evaluación por clase, línea base y el experimento de los duplicados."""
+    publicado = leer_metricas(CARPETA)
+    artefacto = cargar_artefacto(CARPETA, "vino")
+    assert reentrenado["metricas"] == publicado["metricas"] and reentrenado["entrada_ejemplo"] == publicado["entrada_ejemplo"]
+    assert reentrenado["rango"] == artefacto["rango"]
+    _, X_test, _, _ = dividir(cargar_datos())
+    assert reentrenado["pipeline"].predict_proba(X_test) == pytest.approx(artefacto["pipeline"].predict_proba(X_test), abs=1e-9)

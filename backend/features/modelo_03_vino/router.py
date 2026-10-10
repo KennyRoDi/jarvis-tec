@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from core.modelos import RespuestaPrediccion, fuera_de_rango, predecir_con_pipeline
 
@@ -28,6 +28,9 @@ UMBRAL_POCO_CONCLUYENTE = 0.5  # si la clase más probable no llega a esto, se a
 
 
 class Entrada(BaseModel):
+    # Estricta: rechaza campos desconocidos y tipos laxos ("10.5", true).
+    model_config = ConfigDict(extra="forbid", strict=True)
+
     tipo: Literal["red", "white"] = Field(description="Tinto (red) o blanco (white)", examples=["white"])
     fixed_acidity: float = Field(ge=3, le=17, description="Acidez fija (g/dm³, ácido tartárico)", examples=[7.0])
     volatile_acidity: float = Field(ge=0.05, le=2, description="Acidez volátil (g/dm³, ácido acético)", examples=[0.3])

@@ -45,13 +45,17 @@ def agrupar_calidad(puntaje: pd.Series) -> pd.Series:
     return pd.Series(np.where(puntaje <= 5, "baja", np.where(puntaje == 6, "media", "alta")), index=puntaje.index)
 
 
+def sin_duplicados(df: pd.DataFrame) -> pd.DataFrame:
+    return df.drop_duplicates().reset_index(drop=True)
+
+
 def cargar_datos(quitar_duplicados: bool = True) -> pd.DataFrame:
     """Lee el CSV crudo, normaliza nombres y (por defecto) descarta las filas duplicadas antes de dividir."""
     df = pd.read_csv(CARPETA / "dataset.csv")
     df.columns = [c.replace(" ", "_").lower() for c in df.columns]
     df = df.rename(columns={"type": "tipo"})
     if quitar_duplicados:
-        df = df.drop_duplicates().reset_index(drop=True)
+        df = sin_duplicados(df)
     df[OBJETIVO] = agrupar_calidad(df["quality"])
     return df
 
@@ -108,7 +112,7 @@ def candidatos() -> dict[str, Pipeline]:
     return {
         "mayoritaria (línea base)": armar(DummyClassifier(strategy="most_frequent")),
         "regresión logística": armar(LogisticRegression(max_iter=3000, class_weight="balanced")),
-        "svm rbf": armar(SVC(C=3, class_weight="balanced", probability=True, random_state=SEMILLA)),
+        "svm rbf": armar(SVC(C=3, class_weight="balanced", random_state=SEMILLA)),
         "random forest": armar(RandomForestClassifier(
             n_estimators=100, min_samples_leaf=5, max_depth=16, class_weight="balanced_subsample",  # compacto: ~3 MB en git
             random_state=SEMILLA, n_jobs=-1), escalar=False),
@@ -118,7 +122,12 @@ def candidatos() -> dict[str, Pipeline]:
     }
 
 
-def evaluar(pipeline: Pipeline, X_test, y_test, figuras: Path) -> dict:
+def elegibles() -> list[str]:
+    """Candidatos que pueden ser el modelo elegido: no la línea base y solo los que calculan probabilidades (la API las devuelve)."""
+    return [n for n, pipe in candidatos().items() if "línea base" not in n and hasattr(pipe, "predict_proba")]
+
+
+def evaluar(pipeline: Pipeline, X_test, y_test, figuras: Path | None = None) -> dict:
     """5. Evaluación sobre el conjunto de prueba."""
     y_pred = pipeline.predict(X_test)
     metricas = metricas_clasificacion(y_test, y_pred, orden=ORDEN)  # matriz: filas = real, columnas = predicho
@@ -126,6 +135,8 @@ def evaluar(pipeline: Pipeline, X_test, y_test, figuras: Path) -> dict:
     metricas["por_clase"] = {c: {k: round(float(v), 3) for k, v in d.items()}
                              for c, d in classification_report(y_test, y_pred, labels=ORDEN, output_dict=True, zero_division=0).items()
                              if c in ORDEN}
+    if figuras is None:  # sin efectos en disco (pruebas)
+        return metricas
     sns.heatmap(matriz, annot=True, fmt="d", cmap="Blues", xticklabels=ORDEN, yticklabels=ORDEN)
     plt.xlabel("Predicho")
     plt.ylabel("Real")
@@ -134,13 +145,11 @@ def evaluar(pipeline: Pipeline, X_test, y_test, figuras: Path) -> dict:
     return metricas
 
 
-def main() -> None:
-    figuras = carpeta_figuras(CARPETA)
-    crudo = cargar_datos(quitar_duplicados=False)
-    df = cargar_datos()
-    entender(df, len(crudo))
-    explorar(df, figuras)
-
+def entrenar(crudo: pd.DataFrame, figuras: Path | None = None, imprimir: bool = True) -> dict:
+    """Etapas 4 y 5 completas a partir de los datos **crudos** (con duplicados: el experimento los necesita), **sin escribir nada
+    en disco** si `figuras` es None: las pruebas lo reentrenan y exigen reproducir exactamente lo publicado."""
+    log = print if imprimir else (lambda *a, **k: None)
+    df = sin_duplicados(crudo)
     X_train, X_test, y_train, y_test = dividir(df)
 
     # La selección usa solo el entrenamiento (validación cruzada estratificada repetida); la prueba, una vez.
@@ -151,10 +160,12 @@ def main() -> None:
         exactitud = cross_val_score(pipe, X_train, y_train, cv=validacion, scoring="accuracy", n_jobs=-1)
         comparacion[nombre] = {"cv_f1_macro": round(float(f1.mean()), 3), "cv_f1_desv": round(float(f1.std()), 3),
                                "cv_accuracy": round(float(exactitud.mean()), 3)}
-        print(f"{nombre:26s} F1 macro cv = {f1.mean():.3f} ± {f1.std():.3f}   accuracy cv = {exactitud.mean():.3f}")
+        log(f"{nombre:26s} F1 macro cv = {f1.mean():.3f} ± {f1.std():.3f}   accuracy cv = {exactitud.mean():.3f}")
 
-    ganador = max((n for n in comparacion if "línea base" not in n), key=lambda n: comparacion[n]["cv_f1_macro"])
-    print(f"\nModelo elegido: {ganador}")
+    # La API muestra las probabilidades de cada clase: solo puede elegirse un candidato que las calcule (la SVM sin
+    # `probability=True`, deprecado en scikit-learn 1.9, no las calcula).
+    ganador = max(elegibles(), key=lambda n: comparacion[n]["cv_f1_macro"])
+    log(f"\nModelo elegido: {ganador}")
     pipeline = candidatos()[ganador].fit(X_train, y_train)
 
     metricas = evaluar(pipeline, X_test, y_test, figuras)
@@ -166,6 +177,7 @@ def main() -> None:
 
     # Experimento: por qué se descartan los duplicados. Con ellos, filas idénticas caen en entrenamiento y
     # prueba y la métrica sube sin que el modelo generalice mejor.
+    crudo = crudo.assign(**{OBJETIVO: agrupar_calidad(crudo["quality"])})
     Xc, yc = crudo[VARIABLES], crudo[OBJETIVO]
     Xc_tr, Xc_te, yc_tr, yc_te = train_test_split(Xc, yc, test_size=0.2, stratify=yc, random_state=SEMILLA)
     inflado = clone(candidatos()[ganador]).fit(Xc_tr, yc_tr)
@@ -177,12 +189,25 @@ def main() -> None:
         "prueba_con_copia_en_entrenamiento": int(copias.sum()),
     }
 
-    # Rango visto en entrenamiento: la API avisa cuando una medida lo excede (core.modelos.fuera_de_rango).
-    rango = {c: [float(X_train[c].min()), float(X_train[c].max())] for c in NUMERICAS}
-    guardar_modelo(CARPETA, pipeline, metricas, entrada_ejemplo=X_test.iloc[[0]].to_dict("records")[0],
-                   variables=VARIABLES, rango=rango)
-    print("\nMétricas:", {k: v for k, v in metricas.items() if k not in ("comparacion_cv", "matriz_confusion", "por_clase")})
-    print("Por clase:", metricas["por_clase"])
+    return {
+        "pipeline": pipeline, "metricas": metricas,
+        # Rango visto en entrenamiento: la API avisa cuando una medida lo excede (core.modelos.fuera_de_rango).
+        "rango": {c: [float(X_train[c].min()), float(X_train[c].max())] for c in NUMERICAS},
+        "entrada_ejemplo": X_test.iloc[[0]].to_dict("records")[0],
+    }
+
+
+def main() -> None:
+    figuras = carpeta_figuras(CARPETA)
+    crudo = cargar_datos(quitar_duplicados=False)
+    df = cargar_datos()
+    entender(df, len(crudo))
+    explorar(df, figuras)
+    r = entrenar(crudo, figuras)
+    guardar_modelo(CARPETA, r["pipeline"], r["metricas"], entrada_ejemplo=r["entrada_ejemplo"], variables=VARIABLES, rango=r["rango"])
+    m = r["metricas"]
+    print("\nMétricas:", {k: v for k, v in m.items() if k not in ("comparacion_cv", "matriz_confusion", "por_clase")})
+    print("Por clase:", m["por_clase"])
     # 6. Conclusión: ver analisis.md
 
 

@@ -88,7 +88,8 @@ versiona en git.
 
 Random Forest y Gradient Boosting no se distinguen con claridad (diferencia de 0.009 con desviaciones de 0.012 a
 0.016), mientras que la regresión logística y la SVM quedan por detrás. La SVM no se optimizó, de modo que su
-resultado puede ser mejorable.
+resultado puede ser mejorable. Además se entrena sin estimar probabilidades (el parámetro `probability` está deprecado en scikit-learn 1.9),
+por lo que no podría ser el modelo elegido: la API devuelve las probabilidades de cada clase y la selección solo considera candidatos que las calculen.
 
 **Conjunto de prueba (1 066 filas):**
 
