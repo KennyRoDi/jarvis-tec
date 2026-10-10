@@ -79,8 +79,8 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
 | 1  | 08 grasa corporal  | 250 filas numéricas, sin nulos; solo excluir `Density` y 2 registros imposibles | ✅ (2026-10-09) |
 | 2  | 09 aguacate        | Sin nulos, pero 54 regiones, fechas y valores por defecto para usarlo con la voz | ✅ (2026-10-09) |
 | 3  | 03 vino            | Multiclase: agrupar `quality`, imputar 38 nulos, estratificar | ✅ (2026-10-09) |
-| 4  | 04 churn           | Binaria, muchas categóricas, `TotalCharges` sucia, entrada de ~20 campos | ⏳ **siguiente** |
-| 5  | 05 acv             | 4.9 % de positivos: métricas distintas a accuracy, pesos de clase, umbral | ⏳ |
+| 4  | 04 churn           | Binaria, muchas categóricas, `TotalCharges` sucia, entrada de ~20 campos | ✅ (2026-10-09) |
+| 5  | 05 acv             | 4.9 % de positivos: métricas distintas a accuracy, pesos de clase, umbral | ⏳ **siguiente** |
 | 6  | 06 hepatitis       | Multiclase muy desbalanceada, clase de 7 filas | ⏳ |
 | 7  | 07 cirrosis        | 418 filas, 106 casi vacías, fuga de información, 4 etapas desiguales | ⏳ |
 | 8  | 01 bitcoin         | Serie temporal: fechas, `-`, partición temporal, rezagos, predicción recursiva | ⏳ |
@@ -116,6 +116,15 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   estructurales sobre `candidatos()` / `dividir()`. Así se detectaron 8 pruebas débiles en el modelo 03.
 - Para avisar de extrapolación usar `core.modelos.fuera_de_rango` y guardar `rango=` en el artefacto (el modelo 08
   aún tiene una copia local de esa lógica). La matriz de confusión se pide con `metricas_clasificacion(..., orden=...)`.
+- **`cross_val_score` con etiquetas de texto**: el scorer `average_precision` falla y devuelve `nan` en silencio.
+  Usar `make_scorer(average_precision_score, response_method="predict_proba", pos_label=...)` y siempre
+  `error_score="raise"`.
+- Desbalance: sin `class_weight` si se muestran probabilidades; elegir el umbral con
+  `core.entrenamiento.umbral_optimo_f1` sobre predicciones fuera de muestra (`cross_val_predict`) del
+  entrenamiento, guardarlo en el artefacto (`umbral=`) y usarlo en el router (no el 0.5 por defecto).
+- Reducir variables con evidencia: comparar AUC/F1 de validación cruzada con 18 / 9 / 6 / 3 variables y guardar el
+  experimento en `metricas.json`; un formulario corto vale la pena si la pérdida es menor que la desviación.
+- Comprobar si el dataset es real o de ejemplo (el de churn es una muestra ficticia de IBM) y decirlo en las limitaciones.
 - Cada modelo se entrega en su rama `feature/modelo-XX-slug` con PR; un subagente lo verifica de forma
   independiente (pruebas, fuga de información, métricas reproducibles, contrato, coherencia de documentos).
 
@@ -155,7 +164,8 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Modelo 08 grasa corporal     | ✅ entrenado (Lasso, R² prueba 0.557 / CV 0.695); falta interfaz |
 | Modelo 09 aguacate           | ✅ entrenado (GB, R² prueba 0.418 temporal / CV 0.509); falta interfaz |
 | Modelo 03 vino               | ✅ entrenado (RF, F1 macro prueba 0.591 / CV 0.595); falta interfaz |
-| Modelos 01, 04–07, 10        | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
+| Modelo 04 churn              | ✅ entrenado (RF, AUC prueba 0.840 / CV 0.845, umbral 0.35); falta interfaz |
+| Modelos 01, 05–07, 10        | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |
 | Comandos de voz → modelo     | 🟡 reconoce el modelo; faltan parámetros y el tono según la emoción   |
