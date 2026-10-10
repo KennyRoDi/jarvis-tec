@@ -86,7 +86,7 @@ cd frontend && npm install
 | 03 | Calidad del vino                         | Clasificación  | ✅ F1 = 0.59 |
 | 04 | Abandono de clientes de telefonía        | Clasificación  | ✅ AUC = 0.84 |
 | 05 | Riesgo de accidente cerebrovascular      | Clasificación  | ✅ AUC = 0.84 |
-| 06 | Tipo de hepatitis C                      | Clasificación  | Pendiente     |
+| 06 | Tipo de hepatitis C                      | Clasificación  | ✅ F1 macro = 0.64 |
 | 07 | Etapa de cirrosis                        | Clasificación  | Pendiente     |
 | 08 | Porcentaje de grasa corporal             | Regresión      | ✅ R² = 0.56 (CV 0.70) |
 | 09 | Precio del aguacate                      | Regresión      | ✅ R² = 0.42 (temporal) |

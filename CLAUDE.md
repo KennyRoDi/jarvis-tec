@@ -28,7 +28,8 @@ piden cambios en un PR intermedio, hay que rebasar las ramas siguientes.
    transformador de fechas en módulo propio, reentrenar con todo para servir).
 2. **Re-verificar el 05 con un subagente independiente**: tras la última revisión se quitó el `bmi`, ganó la regresión
    logística y cambiaron los umbrales (0.11 y 0.045); esos cambios solo se comprobaron con pruebas y mutaciones propias.
-3. **PR de seguimiento** que lleve a los modelos 08, 09 y 03 lo aprendido después: `entrenar()` pura + prueba
+3. **PR de seguimiento** que lleve a los modelos 08, 09 y 03 lo aprendido después (en el 03, además, quitar `SVC(probability=True)`: el
+   parámetro `probability` está deprecado en scikit-learn 1.9 y emite `FutureWarning`): `entrenar()` pura + prueba
    `reproduce`, `Entrada` estricta, `core.fuera_de_rango` (el 08 tiene copia local) y control de mutaciones.
 4. Interfaz (Dev B), voz y visión, y documento LaTeX siguen sin empezar; ver `specs/alcance_spec.md`.
 
@@ -122,8 +123,8 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
 | 3  | 03 vino            | Multiclase: agrupar `quality`, imputar 38 nulos, estratificar | ✅ (2026-10-09) |
 | 4  | 04 churn           | Binaria, muchas categóricas, `TotalCharges` sucia, formulario de 9 campos elegidos de 18 | ✅ (2026-10-09) |
 | 5  | 05 acv             | 4.9 % de positivos: métricas distintas a accuracy, umbrales, bmi faltante informativo | ✅ (2026-10-09) |
-| 6  | 06 hepatitis       | Multiclase muy desbalanceada, clase de 7 filas | ⏳ **siguiente** |
-| 7  | 07 cirrosis        | 418 filas, 106 casi vacías, fuga de información, 4 etapas desiguales | ⏳ |
+| 6  | 06 hepatitis       | Multiclase muy desbalanceada, clase de 7 filas | ✅ (2026-10-09) |
+| 7  | 07 cirrosis        | 418 filas, 106 casi vacías, fuga de información, 4 etapas desiguales | ⏳ **siguiente** |
 | 8  | 01 bitcoin         | Serie temporal: fechas, `-`, partición temporal, rezagos, predicción recursiva | ⏳ |
 | 9  | 10 sp500           | Serie temporal multi-símbolo; interpretar el símbolo desde la voz | ⏳ |
 
@@ -155,6 +156,9 @@ De menor a mayor complejidad; se trabajan en este orden y cada uno se marca al t
   mediana deja un pico que un árbol aísla y "aprende" el artefacto sin que nadie lo incluya (Random Forest con `bmi`
   imputado: AUC 0.8455; sin `bmi`: 0.8347). Comprobarlo reajustando el modelo **con y sin** la variable; si el aporte
   desaparece, excluir la variable. Los umbrales y el recall con pocos positivos dependen de la semilla: reportar el rango.
+- **Clases raras (< 30 casos) en multiclase** (modelo 06): ponderar las clases y declarar que los puntajes no son probabilidades
+  calibradas; reportar IC bootstrap de la prueba y las predicciones fuera de muestra del entrenamiento (más estables por
+  clase); mirar la vista binaria enfermedad/sano. Verificar si el origen de las clases es distinto (los donantes del 06 tienen ≥ 32 años).
 - **`entrenar()` pura + prueba `reproduce`**: separar el entrenamiento (selección, umbral, evaluación) de la escritura
   en disco, y añadir una prueba marcada `@pytest.mark.reproduce` que lo reejecute en memoria y exija igualdad
   exacta con `metricas.json`, el umbral, el rango y las probabilidades del artefacto. Es lo que atrapa fugas y
@@ -229,7 +233,8 @@ _Actualizar al cerrar cada tarea._ **Entrega: semana 11, tentativa** (puede move
 | Modelo 03 vino               | ✅ entrenado (RF, F1 macro prueba 0.591 / CV 0.595); falta interfaz |
 | Modelo 04 churn              | ✅ entrenado (RF, AUC prueba 0.840 / CV 0.845, umbral 0.35); falta interfaz |
 | Modelo 05 acv                | ✅ entrenado (regresión logística, 4 variables sin bmi; AUC prueba 0.840 / CV 0.842, umbrales 0.11 y 0.045); falta interfaz |
-| Modelos 01, 06–07, 10        | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
+| Modelo 06 hepatitis          | ✅ entrenado (RF, F1 macro prueba 0.640 / CV 0.588, 11 variables sin ALP); falta interfaz |
+| Modelos 01, 07, 10           | ⏳ plantillas con TODO; `dataset.csv` de los 10 ya está en su carpeta (verificado) |
 | Voz a texto (Google)         | ⏳ endpoint valida archivo, responde 501                               |
 | Emociones                    | ⏳ responde 501. Decidido y avisado al profesor (2026-10-09): Azure detecta el rostro, Google Vision da la emoción. **Condición del profesor: poder justificarlo en el documento** (`docs_latex/SPEC.md`) |
 | Comandos de voz → modelo     | 🟡 reconoce el modelo; faltan parámetros y el tono según la emoción   |
