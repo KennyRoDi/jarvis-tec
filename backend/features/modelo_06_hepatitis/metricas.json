@@ -1,0 +1,237 @@
+{
+  "metricas": {
+    "accuracy": 0.9262,
+    "precision_macro": 0.7701,
+    "recall_macro": 0.5292,
+    "f1_macro": 0.5798,
+    "matriz_confusion": [
+      [
+        107,
+        0,
+        0,
+        0
+      ],
+      [
+        3,
+        1,
+        1,
+        0
+      ],
+      [
+        2,
+        0,
+        1,
+        1
+      ],
+      [
+        1,
+        0,
+        1,
+        4
+      ]
+    ],
+    "orden_clases": [
+      "donante",
+      "hepatitis",
+      "fibrosis",
+      "cirrosis"
+    ],
+    "por_clase": {
+      "donante": {
+        "precision": 0.947,
+        "recall": 1.0,
+        "f1-score": 0.973,
+        "support": 107.0
+      },
+      "hepatitis": {
+        "precision": 1.0,
+        "recall": 0.2,
+        "f1-score": 0.333,
+        "support": 5.0
+      },
+      "fibrosis": {
+        "precision": 0.333,
+        "recall": 0.25,
+        "f1-score": 0.286,
+        "support": 4.0
+      },
+      "cirrosis": {
+        "precision": 0.8,
+        "recall": 0.667,
+        "f1-score": 0.727,
+        "support": 6.0
+      }
+    },
+    "enfermedad_vs_donante": {
+      "sensibilidad": 0.6,
+      "especificidad": 1.0
+    },
+    "ic95": {
+      "f1_macro": [
+        0.3682,
+        0.7525
+      ],
+      "accuracy": [
+        0.877,
+        0.9672
+      ]
+    },
+    "modelo": "random forest",
+    "comparacion_cv": {
+      "clase mayoritaria (línea base)": {
+        "cv_f1_macro": 0.2336,
+        "cv_f1_desv": 0.0001,
+        "cv_balanced_accuracy": 0.25
+      },
+      "regresión logística": {
+        "cv_f1_macro": 0.5946,
+        "cv_f1_desv": 0.0719,
+        "cv_balanced_accuracy": 0.6621
+      },
+      "k vecinos": {
+        "cv_f1_macro": 0.5472,
+        "cv_f1_desv": 0.0935,
+        "cv_balanced_accuracy": 0.5113
+      },
+      "random forest": {
+        "cv_f1_macro": 0.6346,
+        "cv_f1_desv": 0.1105,
+        "cv_balanced_accuracy": 0.6034
+      }
+    },
+    "baseline": {
+      "accuracy": 0.877,
+      "precision_macro": 0.2193,
+      "recall_macro": 0.25,
+      "f1_macro": 0.2336,
+      "orden_clases": [
+        "donante",
+        "hepatitis",
+        "fibrosis",
+        "cirrosis"
+      ]
+    },
+    "n_entrenamiento": 486,
+    "n_prueba": 122,
+    "casos_por_clase_prueba": {
+      "donante": 107,
+      "hepatitis": 5,
+      "fibrosis": 4,
+      "cirrosis": 6
+    },
+    "oof_entrenamiento": {
+      "accuracy": 0.9383,
+      "recall_macro": 0.6173,
+      "f1_macro": 0.6614,
+      "por_clase": {
+        "donante": {
+          "precision": 0.964,
+          "recall": 0.998,
+          "f1-score": 0.98,
+          "support": 426.0
+        },
+        "hepatitis": {
+          "precision": 0.583,
+          "recall": 0.368,
+          "f1-score": 0.452,
+          "support": 19.0
+        },
+        "fibrosis": {
+          "precision": 0.5,
+          "recall": 0.353,
+          "f1-score": 0.414,
+          "support": 17.0
+        },
+        "cirrosis": {
+          "precision": 0.857,
+          "recall": 0.75,
+          "f1-score": 0.8,
+          "support": 24.0
+        }
+      },
+      "enfermedad_vs_donante": {
+        "sensibilidad": 0.7333,
+        "especificidad": 0.9977
+      }
+    },
+    "experimento_variables": {
+      "12 (todas, con sexo)": {
+        "variables": 12,
+        "cv_f1_macro": 0.5823,
+        "cv_f1_desv": 0.0732
+      },
+      "11 (las elegidas: edad + 10 análisis)": {
+        "variables": 11,
+        "cv_f1_macro": 0.5946,
+        "cv_f1_desv": 0.0719
+      },
+      "10 (edad + 9 análisis, sin ALP)": {
+        "variables": 10,
+        "cv_f1_macro": 0.5812,
+        "cv_f1_desv": 0.0623
+      },
+      "10 (solo laboratorio, sin edad)": {
+        "variables": 10,
+        "cv_f1_macro": 0.5314,
+        "cv_f1_desv": 0.065
+      },
+      "2 (solo edad y sexo)": {
+        "variables": 2,
+        "cv_f1_macro": 0.2099,
+        "cv_f1_desv": 0.0442
+      },
+      "11 + indicador de ALP faltante (diagnóstico, no se usa)": {
+        "variables": 12,
+        "cv_f1_macro": 0.6038,
+        "cv_f1_desv": 0.0905
+      }
+    },
+    "experimento_alp_random_forest": {
+      "random forest con ALP (elegido)": {
+        "cv_f1_macro": 0.6346,
+        "cv_f1_desv": 0.1105
+      },
+      "random forest sin ALP": {
+        "cv_f1_macro": 0.58,
+        "cv_f1_desv": 0.1098
+      },
+      "random forest con los vacíos de ALP rellenados al azar con valores observados": {
+        "cv_f1_macro": 0.6234,
+        "cv_f1_desv": 0.1284
+      },
+      "random forest solo con el indicador de ALP faltante (sin ALP)": {
+        "cv_f1_macro": 0.5977,
+        "cv_f1_desv": 0.1224
+      },
+      "random forest solo en las filas con ALP observada, con ALP": {
+        "cv_f1_macro": 0.6727,
+        "cv_f1_desv": 0.1058
+      },
+      "random forest solo en las filas con ALP observada, sin ALP": {
+        "cv_f1_macro": 0.5749,
+        "cv_f1_desv": 0.0956
+      }
+    },
+    "oof_regresion_logistica": {
+      "f1_macro": 0.6257,
+      "recall_hepatitis": 0.579,
+      "enfermedad_vs_donante": {
+        "sensibilidad": 0.9167,
+        "especificidad": 0.9272
+      }
+    }
+  },
+  "entrada_ejemplo": {
+    "age": 32,
+    "alb": 50.9,
+    "alp": 65.5,
+    "alt": 23.2,
+    "ast": 21.2,
+    "bil": 6.9,
+    "che": 8.69,
+    "chol": 4.1,
+    "crea": 83.0,
+    "ggt": 13.7,
+    "prot": 71.3
+  }
+}

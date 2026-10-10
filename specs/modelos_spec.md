@@ -56,7 +56,7 @@ y renombrar el CSV principal a `dataset.csv`.
 | 03 | [vino](../backend/features/modelo_03_vino/SPEC.md)                              | No                           | ✅ entrenado (falta interfaz) |
 | 04 | [churn](../backend/features/modelo_04_churn/SPEC.md)                            | No                           | ✅ entrenado (falta interfaz) |
 | 05 | [acv](../backend/features/modelo_05_acv/SPEC.md)                                | No                           | ✅ entrenado (falta interfaz) |
-| 06 | [hepatitis](../backend/features/modelo_06_hepatitis/SPEC.md)                    | No                           | ⏳ |
+| 06 | [hepatitis](../backend/features/modelo_06_hepatitis/SPEC.md)                    | No                           | ✅ entrenado (falta interfaz) |
 | 07 | [cirrosis](../backend/features/modelo_07_cirrosis/SPEC.md)                      | No                           | ⏳ |
 | 08 | [grasa_corporal](../backend/features/modelo_08_grasa_corporal/SPEC.md)          | No                           | ✅ entrenado (falta interfaz) |
 | 09 | [aguacate](../backend/features/modelo_09_aguacate/SPEC.md)                      | Sí (valores por defecto)     | ✅ entrenado (falta interfaz) |

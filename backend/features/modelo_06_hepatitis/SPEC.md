@@ -15,33 +15,40 @@
 ## Datos
 
 - **Fuente:** https://www.kaggle.com/fedesoriano/hepatitis-c-dataset (`HepatitisCdata.csv`). ⚠️ En el enunciado este enlace está intercambiado con el de grasa corporal
-- **Archivo:** `dataset.csv` en esta carpeta. Si el original es grande, va en `data/` y aquí solo el recorte.
+- **Archivo:** `dataset.csv` en esta carpeta.
 - ✅ Verificado: 615 filas. Hay una columna `Unnamed: 0` (índice): descartarla. Valores de `Category`: `0=Blood Donor` 533, `3=Cirrhosis` 30, `1=Hepatitis` 24, `2=Fibrosis` 21, `0s=suspect Blood Donor` 7.
 - Variables: `Age, Sex` y análisis de laboratorio `ALB, ALP, ALT, AST, BIL, CHE, CHOL, CREA, GGT, PROT`.
-- Decidir y justificar qué hacer con la clase `0s=suspect Blood Donor` (solo 7 filas).
-- Hay 31 nulos en 5 columnas de laboratorio (`ALP` 18, `CHOL` 10). Las clases están muy desbalanceadas (87 % donantes).
+- ✅ Clase `0s=suspect Blood Donor` (7 filas): **se excluye** (valores claramente anormales, albúmina mediana 21.6 g/L; no es donante ni etapa de la enfermedad).
+- ✅ **Los 18 vacíos de `ALP` están todos en pacientes** (0 en donantes): se sospechó un artefacto, pero se comprobó que **es señal real**: el aporte al Random Forest sobrevive a rellenar los vacíos al azar con valores observados (0.623 contra 0.635 con ALP y 0.580 sin ella) y el indicador de faltante solo no lo reproduce (0.598). `ALP` **entra** al modelo (a diferencia del `bmi` del modelo 05).
+- ✅ Ningún donante tiene menos de 32 años (los pacientes llegan a 19): riesgo de aprender la población y no la enfermedad. 7 pares de donantes tienen los 10 análisis idénticos con edad distinta (casi duplicados).
+- Las unidades de los análisis no están documentadas en la fuente: se infirieron por el rango (g/L, U/L, µmol/L, mmol/L, kU/L); confirmarlas.
+- Hay 31 nulos en 5 columnas de laboratorio (`ALP` 18, `CHOL` 10). Tras excluir la clase sospechosa: 533 donantes (88 %), 30 cirrosis, 24 hepatitis y 21 fibrosis.
 
 ## Enfoque sugerido
 
-- Partición estratificada; candidatos KNN (con escalado), Random Forest y SVM.
-- Métrica: F1 macro más matriz de confusión.
+- Partición estratificada (la prueba tiene solo 4–6 casos por clase de enfermedad). Candidatos evaluados: regresión logística, k vecinos y Random Forest (ganó Random Forest; empate dentro del ruido). **No se usó SVM**: `SVC(probability=True)` está deprecado en scikit-learn 1.9.
+- Métrica: F1 macro más matriz de confusión, con intervalos bootstrap y predicciones fuera de muestra del entrenamiento (más estables por clase). Las clases se ponderan: los puntajes **no** son probabilidades calibradas.
 
 ## Contrato del endpoint
 
 - `POST /api/modelos/hepatitis/predecir` · `GET /api/modelos/hepatitis/info`
-- **Entrada (`Entrada` en `router.py`):** `age`, `sex` y los 10 análisis de laboratorio.
-- **Salida:** `prediccion` categoría legible (sin el prefijo numérico) más `probabilidades`.
+- **Entrada (`Entrada` en `router.py`):** ✅ 11 campos obligatorios: `age` y 10 análisis (`alb`, `alp`, `alt`, `ast`, `bil`, `che`, `chol`, `crea`, `ggt`, `prot`); **sin `sex`** (no aporta y es un dato sensible). Estricta (`extra="forbid"`, `strict=True`).
+- **Salida:** `prediccion` ∈ `donante`/`hepatitis`/`fibrosis`/`cirrosis` más los puntajes de las 4 clases en `probabilidades`. El `texto` los lista, aclara que no son probabilidades calibradas ni un diagnóstico, y avisa si un valor sale del rango de entrenamiento.
 - **¿Se ejecuta solo con la voz?** No: el comando abre el formulario.
 
-Cuando definas la entrada, quita `extra="allow"` de `Entrada` y usa `Field`/`Literal` con rangos y valores
-permitidos: de ahí sale el formulario de la interfaz (`esquema_entrada`).
+El formulario de la interfaz sale de `esquema_entrada` (generado desde `Entrada`).
 
 ## Comandos de voz (`MODELO_INFO["comandos"]`)
 
 - "tipo de hepatitis"
-- "diagnóstico de hepatitis"
+- "estado del higado"
+- "diagnostico de hepatitis"
 
 Frases cortas y en minúscula; no deben coincidir con las de otro modelo.
+
+## Resultado (2026-10-09)
+
+Random Forest (343 KB), 11 variables (sin `ALP`, artefacto), clases ponderadas. Prueba (122 personas, solo 4–6 casos por clase de enfermedad): exactitud 0.934, F1 macro 0.640 (IC 95 % 0.41–0.82) frente a 0.234; especificidad 1.0 y sensibilidad 0.67 (enfermedad contra donante); cirrosis se reconoce (recall 0.75 fuera de muestra) y hepatitis casi no (0.11). Las poblaciones de origen difieren (donantes ≥ 32 años). No es un diagnóstico. Detalle en `analisis.md`.
 
 ## Archivos
 
@@ -52,26 +59,27 @@ Frases cortas y en minúscula; no deben coincidir con las de otro modelo.
 | `router.py`      | `MODELO_INFO`, `Entrada` y `POST /predecir`                              |
 | `test_modelo.py` | Pruebas del endpoint con el modelo real                                  |
 | `analisis.md`    | Redacción académica de las 6 etapas (pasa a LaTeX)                       |
+| `notebook.ipynb` | Versión didáctica para Google Colab (extra; no reemplaza a `train.py`)      |
 
-## Referencias sugeridas
+## Referencias
 
-- _Pendiente: al menos un artículo científico que justifique el algoritmo elegido._
+Verificadas y listadas al final de `analisis.md`; están en `docs_latex/referencias.bib`.
 
 ## Criterios de aceptación
 
 Un modelo vale 5 pts (creación) + 1 (aplicación) + 1 (API) solo si cumple **todo** lo siguiente.
 
 **Creación del modelo**
-- [ ] `dataset.csv` disponible y `python -m features.modelo_06_hepatitis.train` corre sin errores
-- [ ] Entendimiento y exploración: estadísticas impresas y al menos 2 figuras en `figuras/`
-- [ ] Modelo en un `Pipeline` (el mismo preprocesamiento en el entrenamiento y en la API)
-- [ ] Evaluación en el conjunto de prueba con las métricas de `specs/modelos_spec.md` y comparación con una línea base
-- [ ] `analisis.md` con las 6 secciones redactadas y al menos una referencia científica que justifique el algoritmo
+- [x] `dataset.csv` disponible y `python -m features.modelo_06_hepatitis.train` corre sin errores
+- [x] Entendimiento y exploración: estadísticas impresas y al menos 2 figuras en `figuras/`
+- [x] Modelo en un `Pipeline` (el mismo preprocesamiento en el entrenamiento y en la API)
+- [x] Evaluación en el conjunto de prueba con las métricas de `specs/modelos_spec.md` y comparación con una línea base
+- [x] `analisis.md` con las 6 secciones redactadas y al menos una referencia científica que justifique el algoritmo
 
 **API REST**
-- [ ] `Entrada` con campos tipados y validados (sin `extra="allow"`)
-- [ ] `texto` de la respuesta en lenguaje natural, listo para que JARVIS lo lea
-- [ ] `test_modelo.py`: predicción válida (200) y entrada inválida (422)
+- [x] `Entrada` con campos tipados y validados (sin `extra="allow"`)
+- [x] `texto` de la respuesta en lenguaje natural, listo para que JARVIS lo lea
+- [x] `test_modelo.py`: predicción válida (200) y entrada inválida (422)
 
 **Aplicación**
 - [ ] Se puede ejecutar desde la interfaz (formulario o comando de voz) y el resultado se muestra y se lee en voz alta
