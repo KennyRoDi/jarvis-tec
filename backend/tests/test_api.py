@@ -28,6 +28,14 @@ def test_ruta_inexistente_usa_formato_de_error(cliente, assert_error):
     assert_error(cliente.get("/api/no-existe"), 404, "NO_ENCONTRADO")
 
 
+def test_json_con_nan_es_un_422_no_un_500(cliente, assert_error):
+    """NaN no es JSON estándar, pero Python lo acepta: antes provocaba un 500 al serializar el error."""
+    respuesta = cliente.post("/api/modelos/autos/predecir", content=b'{"year": NaN}',
+                             headers={"Content-Type": "application/json"})
+    assert_error(respuesta, 422, "VALIDACION")
+    assert {"loc", "msg", "type"} <= set(respuesta.json()["error"]["detalle"][0])
+
+
 def test_info_de_modelo_inexistente(cliente, assert_error):
     assert_error(cliente.get("/api/modelos/no-existe/info"), 404, "NO_ENCONTRADO")
 

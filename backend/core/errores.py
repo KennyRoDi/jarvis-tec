@@ -44,7 +44,9 @@ def registrar_manejadores(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def _validacion(_: Request, exc: RequestValidationError):
-        return respuesta_error(422, "VALIDACION", "La solicitud no cumple el esquema.", exc.errors())
+        # Solo loc/msg/type: `input` puede traer NaN (JSON no estándar) y `ctx` objetos no serializables.
+        detalle = [{k: e[k] for k in ("loc", "msg", "type") if k in e} for e in exc.errors()]
+        return respuesta_error(422, "VALIDACION", "La solicitud no cumple el esquema.", detalle)
 
     @app.exception_handler(StarletteHTTPException)
     async def _http(_: Request, exc: StarletteHTTPException):
