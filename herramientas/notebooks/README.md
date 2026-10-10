@@ -18,5 +18,5 @@ python herramientas/notebooks/modelo_08_grasa_corporal.py
 ## Reglas
 - Autocontenido: no importa nada del repositorio (`core`, `features`). `backend/tests/test_notebooks.py` lo comprueba.
 - Español, sin emojis, y el estilo de la plantilla: análisis del problema, hilo conductor, librerías, secciones numeradas, conclusiones.
-- Las cifras deben coincidir con `metricas.json` (se comprobó ejecutando cada notebook con scikit-learn 1.6, el de Colab, y con la versión del repositorio).
+- Las cifras deben coincidir con `metricas.json`, salvo el último decimal (las versiones de scikit-learn cambian un poco los bosques). Se ejecutan con scikit-learn 1.6 y pandas 2.2, parecidos a los de Colab.
 - Afirmar en el texto solo lo que muestran las salidas del propio notebook.
