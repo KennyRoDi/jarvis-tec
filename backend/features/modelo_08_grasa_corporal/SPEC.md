@@ -28,8 +28,8 @@
 ## Contrato del endpoint
 
 - `POST /api/modelos/grasa_corporal/predecir` · `GET /api/modelos/grasa_corporal/info`
-- **Entrada (`Entrada` en `router.py`):** `age`, `weight`, `height` y las circunferencias (documentar las unidades en el formulario).
-- **Salida:** `prediccion` número en %.
+- **Entrada (`Entrada` en `router.py`):** ✅ 13 campos en unidades métricas: `age`, `weight_kg`, `height_cm` y 10 circunferencias `*_cm` (el dataset original trae libras y pulgadas; `train.py` las convierte).
+- **Salida:** `prediccion` número en %. Si alguna medida cae fuera del rango de entrenamiento, `texto` advierte que el resultado es poco confiable.
 - **¿Se ejecuta solo con la voz?** No: el comando abre el formulario.
 
 Cuando definas la entrada, quita `extra="allow"` de `Entrada` y usa `Field`/`Literal` con rangos y valores
@@ -41,6 +41,10 @@ permitidos: de ahí sale el formulario de la interfaz (`esquema_entrada`).
 - "masa corporal"
 
 Frases cortas y en minúscula; no deben coincidir con las de otro modelo.
+
+## Resultado (2026-10-09)
+
+Lasso, R² de prueba 0.557 (validación cruzada 0.695), MAE 3.9 puntos de %. El modelo extrapola mal con medidas extremas y la API lo advierte. Detalle en `analisis.md`.
 
 ## Archivos
 
@@ -61,16 +65,17 @@ Frases cortas y en minúscula; no deben coincidir con las de otro modelo.
 Un modelo vale 5 pts (creación) + 1 (aplicación) + 1 (API) solo si cumple **todo** lo siguiente.
 
 **Creación del modelo**
-- [ ] `dataset.csv` disponible y `python -m features.modelo_08_grasa_corporal.train` corre sin errores
-- [ ] Entendimiento y exploración: estadísticas impresas y al menos 2 figuras en `figuras/`
-- [ ] Modelo en un `Pipeline` (el mismo preprocesamiento en el entrenamiento y en la API)
-- [ ] Evaluación en el conjunto de prueba con las métricas de `specs/modelos_spec.md` y comparación con una línea base
-- [ ] `analisis.md` con las 6 secciones redactadas y al menos una referencia científica que justifique el algoritmo
+- [x] `dataset.csv` disponible y `python -m features.modelo_08_grasa_corporal.train` corre sin errores
+- [x] Entendimiento y exploración: estadísticas impresas y al menos 2 figuras en `figuras/`
+- [x] Modelo en un `Pipeline` (el mismo preprocesamiento en el entrenamiento y en la API)
+- [x] Evaluación en el conjunto de prueba con las métricas de `specs/modelos_spec.md` y comparación con una línea base
+- [x] `analisis.md` con las 6 secciones redactadas y referencias científicas que justifican el algoritmo
+- [ ] Verificar las referencias de `analisis.md` (autores, páginas, DOI) y pasarlas a `docs_latex/referencias.bib`
 
 **API REST**
-- [ ] `Entrada` con campos tipados y validados (sin `extra="allow"`)
-- [ ] `texto` de la respuesta en lenguaje natural, listo para que JARVIS lo lea
-- [ ] `test_modelo.py`: predicción válida (200) y entrada inválida (422)
+- [x] `Entrada` con campos tipados y validados (sin `extra="allow"`)
+- [x] `texto` de la respuesta en lenguaje natural, listo para que JARVIS lo lea
+- [x] `test_modelo.py`: predicción válida (200) y entrada inválida (422)
 
 **Aplicación**
 - [ ] Se puede ejecutar desde la interfaz (formulario o comando de voz) y el resultado se muestra y se lee en voz alta
