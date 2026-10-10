@@ -1,0 +1,58 @@
+{
+  "metricas": {
+    "r2": 0.5572,
+    "mae": 3.9238,
+    "rmse": 5.093,
+    "modelo": "lasso",
+    "comparacion_cv": {
+      "media (línea base)": {
+        "cv_rmse": 8.425,
+        "cv_rmse_desv": 0.808,
+        "cv_r2": -0.051
+      },
+      "regresión lineal": {
+        "cv_rmse": 4.527,
+        "cv_rmse_desv": 0.456,
+        "cv_r2": 0.689
+      },
+      "ridge": {
+        "cv_rmse": 4.535,
+        "cv_rmse_desv": 0.425,
+        "cv_r2": 0.689
+      },
+      "lasso": {
+        "cv_rmse": 4.501,
+        "cv_rmse_desv": 0.386,
+        "cv_r2": 0.695
+      },
+      "random forest": {
+        "cv_rmse": 4.781,
+        "cv_rmse_desv": 0.433,
+        "cv_r2": 0.656
+      }
+    },
+    "baseline_media": {
+      "r2": -0.0059,
+      "mae": 6.5,
+      "rmse": 7.6765
+    },
+    "n_entrenamiento": 200,
+    "n_prueba": 50,
+    "r2_con_density_fuga": 0.9936
+  },
+  "entrada_ejemplo": {
+    "age": 23.0,
+    "weight_kg": 72.46,
+    "height_cm": 183.5,
+    "neck_cm": 35.5,
+    "chest_cm": 92.1,
+    "abdomen_cm": 77.1,
+    "hip_cm": 93.9,
+    "thigh_cm": 56.1,
+    "knee_cm": 36.1,
+    "ankle_cm": 22.7,
+    "biceps_cm": 30.5,
+    "forearm_cm": 27.2,
+    "wrist_cm": 18.2
+  }
+}
