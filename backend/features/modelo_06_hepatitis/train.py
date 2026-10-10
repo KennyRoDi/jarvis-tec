@@ -30,20 +30,21 @@ OBJETIVO = "clase"
 ORDEN = ["donante", "hepatitis", "fibrosis", "cirrosis"]  # de sano a más grave
 ENFERMEDAD = ["hepatitis", "fibrosis", "cirrosis"]
 CLASES = {"0=Blood Donor": "donante", "1=Hepatitis": "hepatitis", "2=Fibrosis": "fibrosis", "3=Cirrhosis": "cirrosis"}
-CATEGORICAS = ["sex"]
-NUMERICAS = ["age", "alb", "alt", "ast", "bil", "che", "chol", "crea", "ggt", "prot"]
-# El ALP se excluye: sus 18 valores vacíos están todos en pacientes (0 en donantes), un artefacto de la recolección
-# que la aplicación no puede dar (ver `experimento_variables` y `experimento_alp_random_forest`).
+LABORATORIO = ["alb", "alp", "alt", "ast", "bil", "che", "chol", "crea", "ggt", "prot"]
+NUMERICAS = ["age"] + LABORATORIO
+CATEGORICAS: list[str] = []
+# 11 variables: edad y 10 análisis. Se excluye el sexo (sin aporte medible y es un dato sensible). El ALP SÍ entra: sus 18
+# vacíos están todos en pacientes, pero se comprobó que su aporte no es ese artefacto (ver `experimento_alp_random_forest`).
 VARIABLES = NUMERICAS + CATEGORICAS
-LABORATORIO = [c for c in NUMERICAS if c != "age"]
 SEMILLA = 42
 CV = dict(scoring="f1_macro", n_jobs=-1, error_score="raise")
 CONJUNTOS = {
-    "12 (todas, ALP imputada)": VARIABLES + ["alp"],
-    "11 (las elegidas, sin ALP)": VARIABLES,
-    "9 (solo laboratorio, sin edad ni sexo)": LABORATORIO,
+    "12 (todas, con sexo)": VARIABLES + ["sex"],
+    "11 (las elegidas: edad + 10 análisis)": VARIABLES,
+    "10 (edad + 9 análisis, sin ALP)": [v for v in VARIABLES if v != "alp"],
+    "10 (solo laboratorio, sin edad)": LABORATORIO,
     "2 (solo edad y sexo)": ["age", "sex"],
-    "12 + indicador de ALP faltante (artefacto, no se usa)": VARIABLES + ["alp_faltante"],
+    "11 + indicador de ALP faltante (diagnóstico, no se usa)": VARIABLES + ["alp_faltante"],
 }
 
 # 1. Análisis del problema: clasificar el estado hepático (donante sano, hepatitis, fibrosis o cirrosis) a partir de
@@ -68,6 +69,7 @@ def entender(df: pd.DataFrame) -> None:
     print("\nNulos:", nulos[nulos > 0].to_dict())
     print("ALP faltante por clase:", df[df.alp.isna()][OBJETIVO].value_counts().reindex(ORDEN, fill_value=0).to_dict())
     print("CHOL faltante por clase:", df[df.chol.isna()][OBJETIVO].value_counts().reindex(ORDEN, fill_value=0).to_dict())
+    print("Filas con los 10 análisis idénticos (casi duplicados; edad o sexo distintos):", int(df[LABORATORIO].duplicated().sum()))
     print("\nEdad mediana por clase:", df.groupby(OBJETIVO).age.median().reindex(ORDEN).to_dict())
     print("% hombres por clase:", df.groupby(OBJETIVO).sex.apply(lambda s: round((s == "m").mean(), 2)).reindex(ORDEN).to_dict())
     print("\nResumen del laboratorio:\n", df[LABORATORIO + ["alp"]].describe().round(1).T)
@@ -103,7 +105,7 @@ def explorar(df: pd.DataFrame, figuras: Path) -> None:
 def armar(estimador, variables: list[str] | None = None, escalar: bool = True) -> Pipeline:
     """4. Modelo: imputación (mediana) + escala de las numéricas, one-hot del sexo y estimador, en un Pipeline."""
     variables = VARIABLES if variables is None else variables
-    categoricas = [v for v in variables if v == "sex"]
+    categoricas = [v for v in variables if v == "sex"]  # solo en el experimento: el modelo no usa el sexo
     numericas = [v for v in variables if v != "sex"]
     columnas = ColumnTransformer([
         ("num", Pipeline([("imputar", SimpleImputer(strategy="median"))] + ([("escala", StandardScaler())] if escalar else [])), numericas),
@@ -204,14 +206,33 @@ def entrenar(df: pd.DataFrame, figuras: Path | None = None, imprimir: bool = Tru
         log(f"  {nombre:56s} F1 macro cv = {f1.mean():.3f} ± {f1.std():.3f}")
     metricas["experimento_variables"] = experimento
 
-    # Por qué se excluye el ALP: sus vacíos están todos en pacientes. Con la mediana como imputación un árbol puede aislarlos.
+    # ¿El aporte del ALP es un artefacto de sus vacíos (que están todos en pacientes) o señal real? Se compara con (1) quitarlo,
+    # (2) rellenar los vacíos con valores observados al azar (sin pista de faltante) y (3) usar solo el indicador de faltante.
+    # Si fuera un artefacto, (2) lo haría desaparecer y (3) lo reproduciría; ocurre lo contrario.
     parametros = candidatos()["random forest"].named_steps["modelo"].get_params()
+    azar = train.copy()
+    vacios = azar["alp"].isna()
+    azar.loc[vacios, "alp"] = np.random.default_rng(SEMILLA).choice(train["alp"].dropna().to_numpy(), int(vacios.sum()))
+    rf = lambda: RandomForestClassifier(**parametros)  # noqa: E731
+    casos = {
+        "random forest con ALP (elegido)": (train, VARIABLES),
+        "random forest sin ALP": (train, [v for v in VARIABLES if v != "alp"]),
+        "random forest con los vacíos de ALP rellenados al azar con valores observados": (azar, VARIABLES),
+        "random forest solo con el indicador de ALP faltante (sin ALP)": (train, [v for v in VARIABLES if v != "alp"] + ["alp_faltante"]),
+        "random forest solo en las filas con ALP observada, con ALP": (train[train.alp.notna()], VARIABLES),
+        "random forest solo en las filas con ALP observada, sin ALP": (train[train.alp.notna()], [v for v in VARIABLES if v != "alp"]),
+    }
     experimento_alp = {}
-    for nombre, cols in {"random forest sin ALP (elegido)": VARIABLES, "random forest con ALP imputada por la mediana": VARIABLES + ["alp"]}.items():
-        f1 = cross_val_score(armar(RandomForestClassifier(**parametros), cols, escalar=False), train[cols], y_train, cv=validacion, **CV)
+    for nombre, (datos, cols) in casos.items():
+        f1 = cross_val_score(armar(rf(), cols, escalar=False), datos[cols], datos[OBJETIVO], cv=validacion, **CV)
         experimento_alp[nombre] = {"cv_f1_macro": round(float(f1.mean()), 4), "cv_f1_desv": round(float(f1.std()), 4)}
-        log(f"  {nombre:56s} F1 macro cv = {f1.mean():.3f} ± {f1.std():.3f}")
+        log(f"  {nombre:78s} F1 macro cv = {f1.mean():.3f} ± {f1.std():.3f}")
     metricas["experimento_alp_random_forest"] = experimento_alp
+
+    # La alternativa (regresión logística) rinde casi igual en validación cruzada pero con otro compromiso sensibilidad/especificidad.
+    oof_lr = cross_val_predict(candidatos()["regresión logística"], X_train, y_train, cv=StratifiedKFold(5, shuffle=True, random_state=SEMILLA))
+    metricas["oof_regresion_logistica"] = {"f1_macro": round(f1_macro_de(y_train, oof_lr), 4), "recall_hepatitis": por_clase(y_train, oof_lr)["hepatitis"]["recall"],
+                                           "enfermedad_vs_donante": sensibilidad_y_especificidad(y_train, oof_lr)}
 
     return {
         "pipeline": pipeline, "metricas": metricas,
