@@ -1,10 +1,12 @@
 """Pruebas de las utilidades comunes de entrenamiento y predicción (backend/core)."""
+import os
+
 import joblib
 import numpy as np
 import pytest
 
 from core.entrenamiento import metricas_clasificacion, umbral_optimo_f1
-from core.modelos import fuera_de_rango
+from core.modelos import cargar_artefacto, fuera_de_rango
 
 
 def test_matriz_de_confusion_respeta_el_orden_pedido():
@@ -50,3 +52,18 @@ def test_umbral_optimo_f1_con_separacion_perfecta_y_empate():
 
 def test_umbral_optimo_f1_acepta_etiquetas_booleanas():
     assert umbral_optimo_f1([False, True, True], [0.1, 0.6, 0.9]) == pytest.approx(0.11)
+
+
+def test_fuera_de_rango_revisa_todos_los_campos_y_los_devuelve(tmp_path):
+    joblib.dump({"rango": {"a": [0.0, 10.0], "b": [0.0, 10.0], "c": [0.0, 10.0]}}, tmp_path / "modelo.joblib")
+    assert fuera_de_rango(tmp_path, "m", {"a": 5, "b": 50, "c": -50}) == ["b", "c"]
+
+
+def test_el_cache_del_artefacto_se_invalida_cuando_cambia_el_archivo(tmp_path):
+    """Si se reentrena con el servidor encendido, debe servirse el artefacto nuevo."""
+    ruta = tmp_path / "modelo.joblib"
+    joblib.dump({"version": 1}, ruta)
+    assert cargar_artefacto(tmp_path, "m")["version"] == 1
+    joblib.dump({"version": 2}, ruta)
+    os.utime(ruta, (ruta.stat().st_atime, ruta.stat().st_mtime + 10))
+    assert cargar_artefacto(tmp_path, "m")["version"] == 2
